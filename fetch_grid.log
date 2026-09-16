@@ -1,0 +1,17 @@
+2026-09-16 22:58:10,022 [INFO] fetch_grid: Database schema ensured at C:\Users\liamg\Documents\Development\grid dashboard\grid_telemetry.db
+2026-09-16 22:58:10,023 [INFO] fetch_grid: Ingesting national + balancing telemetry for 2026-09-15 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00
+2026-09-16 22:58:10,946 [INFO] fetch_grid: Fetched generation mix for 2026-09-15 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00 (48 periods)
+2026-09-16 22:58:11,495 [INFO] fetch_grid: Fetched carbon intensity for 2026-09-15 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00 (48 periods)
+2026-09-16 22:58:12,008 [INFO] fetch_grid: Fetched total demand for 2026-09-15 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00 (29 records)
+2026-09-16 22:58:12,747 [INFO] fetch_grid: Fetched system frequency for 2026-09-15 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00 (5760 readings)
+2026-09-16 22:58:13,688 [INFO] fetch_grid: Fetched balancing volumes for 2026-09-15 (48 periods)
+2026-09-16 22:58:14,666 [INFO] fetch_grid: Fetched balancing volumes for 2026-09-16 (45 periods)
+2026-09-16 22:58:15,770 [INFO] fetch_grid: Fetched regional snapshot for 14 DNO regions
+2026-09-16 22:58:15,792 [INFO] fetch_grid: Ingested 48 national rows, 94 balancing rows, 14 regional rows
+2026-09-16 22:58:15,799 [INFO] fetch_grid: Exported day: 47 rows (2026-09-15 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00)
+2026-09-16 22:58:15,803 [INFO] fetch_grid: Exported week: 48 rows (2026-09-09 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00)
+2026-09-16 22:58:15,806 [INFO] fetch_grid: Exported month: 48 rows (2026-08-17 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00)
+2026-09-16 22:58:15,809 [INFO] fetch_grid: Exported year: 48 rows (2025-09-16 21:58:00+00:00 -> 2026-09-16 21:58:00+00:00)
+2026-09-16 22:58:15,812 [INFO] fetch_grid: Exported previous_year: 0 rows (2024-09-16 21:58:00+00:00 -> 2025-09-16 21:58:00+00:00)
+2026-09-16 22:58:15,817 [INFO] fetch_grid: Exported regional_latest: 14 regions
+2026-09-16 22:58:15,819 [INFO] fetch_grid: Run complete.

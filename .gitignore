@@ -1,0 +1,8 @@
+# Only the published GitHub Pages site (docs/) is tracked in this repo.
+# The ETL app itself (fetch_grid.py, git_push.py, systemd units, the SQLite
+# warehouse, logs) is deployed to the VM via scp and stays local there —
+# it is intentionally never committed to GitHub.
+*
+!.gitignore
+!docs/
+!docs/**

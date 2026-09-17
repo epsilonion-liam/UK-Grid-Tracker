@@ -23,9 +23,9 @@ REPO_DIR = Path(__file__).resolve().parent
 LOG_FILE = REPO_DIR / "update.log"
 
 # Pathspec passed to `git add`. Git supports glob patterns natively in
-# pathspecs, so no shell expansion is required. Adjust to match wherever
-# fetch_grid.py writes its exports (e.g. "exports/*.json").
-DATA_PATHSPEC = "data/*.json"
+# pathspecs, so no shell expansion is required. Must match fetch_grid.py's
+# EXPORT_DIR (docs/data, so GitHub Pages can serve index.html + data together).
+DATA_PATHSPEC = "docs/data/*.json"
 
 COMMIT_MESSAGE = (
     "chore(telemetry): automated update of national, balancing, and regional grid data"

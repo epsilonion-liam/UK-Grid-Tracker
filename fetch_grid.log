@@ -1410,3 +1410,14 @@
 2026-09-17 14:33:59,086 [INFO] fetch_grid: Exported regional_latest: 14 regions
 2026-09-17 14:33:59,092 [INFO] fetch_grid: Exported carbon_forecast: 96 periods
 2026-09-17 14:33:59,102 [INFO] fetch_grid: Run complete.
+2026-09-17 15:09:53,109 [INFO] fetch_grid: Database schema ensured at C:\Users\liamg\Documents\Development\grid dashboard\grid_telemetry.db
+2026-09-17 15:09:53,116 [INFO] fetch_grid: Exported day: 47 rows (2026-09-16 14:09:00+00:00 -> 2026-09-17 14:09:00+00:00)
+2026-09-17 15:09:53,122 [INFO] fetch_grid: Exported previous_day: 48 rows (2026-09-15 14:09:00+00:00 -> 2026-09-16 14:09:00+00:00)
+2026-09-17 15:09:53,129 [INFO] fetch_grid: Exported 3days: 143 rows (2026-09-14 14:09:00+00:00 -> 2026-09-17 14:09:00+00:00)
+2026-09-17 15:09:53,141 [INFO] fetch_grid: Exported week: 335 rows (2026-09-10 14:09:00+00:00 -> 2026-09-17 14:09:00+00:00)
+2026-09-17 15:09:53,188 [INFO] fetch_grid: Exported month: 1439 rows (2026-08-18 14:09:00+00:00 -> 2026-09-17 14:09:00+00:00)
+2026-09-17 15:09:53,331 [INFO] fetch_grid: Exported year: 4429 rows (2025-09-17 14:09:00+00:00 -> 2026-09-17 14:09:00+00:00)
+2026-09-17 15:09:53,339 [INFO] fetch_grid: Exported previous_year: 0 rows (2024-09-17 14:09:00+00:00 -> 2025-09-17 14:09:00+00:00)
+2026-09-17 15:09:53,342 [INFO] fetch_grid: Exported regional_latest: 14 regions
+2026-09-17 15:09:53,345 [INFO] fetch_grid: Exported carbon_forecast: 96 periods
+2026-09-17 15:09:53,348 [INFO] fetch_grid: Run complete.

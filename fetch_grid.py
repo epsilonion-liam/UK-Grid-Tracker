@@ -71,7 +71,7 @@ import requests
 # --------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "grid_telemetry.db"
-EXPORT_DIR = BASE_DIR / "data"
+EXPORT_DIR = BASE_DIR / "docs" / "data"
 
 CARBON_INTENSITY_BASE = "https://api.carbonintensity.org.uk"
 ELEXON_BASE = "https://data.elexon.co.uk/bmrs/api/v1"

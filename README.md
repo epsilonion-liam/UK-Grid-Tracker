@@ -3,22 +3,21 @@
 A static, self-hosted GB (Great Britain) electricity grid dashboard. A Python
 ETL script pulls live telemetry into a local SQLite warehouse and exports
 compact JSON files; a single-file HTML/JS front-end (uPlot) renders them as
-interactive timelines, a decarbonisation gauge, and a regional carbon
-intensity map. A GitOps pipeline (systemd timer + git push script) keeps a
+interactive timelines, a decarbonisation gauge, and a regional carbon intensity map. A GitOps pipeline (systemd timer + git push script) keeps a
 deployed VM updating the JSON automatically.
 
 ## Contents
 
 | File | Purpose |
 |---|---|
-| `fetch_grid.py` | Fetches telemetry from NESO + Elexon APIs, stores it in `grid_telemetry.db`, exports JSON to `data/`. |
-| `git_push.py` | Commits/pushes `data/*.json` to `origin/main`, non-interactively. |
-| `index.html` | The dashboard itself. Open directly or serve statically — reads from `data/`. |
+| `fetch_grid.py` | Fetches telemetry from NESO + Elexon APIs, stores it in `grid_telemetry.db`, exports JSON to `docs/data/`. |
+| `git_push.py` | Commits/pushes `docs/data/*.json` to `origin/main`, non-interactively. |
+| `docs/index.html` | The dashboard itself. Open directly or serve statically — reads from `data/` (relative to itself). Also what GitHub Pages serves (see [DEPLOYMENT.md](DEPLOYMENT.md)). |
 | `grid-tracker.service` / `grid-tracker.timer` | systemd units to run `fetch_grid.py` + `git_push.py` automatically on a Linux VM. |
 | `setup_deploy_key.sh` | Reference commands for provisioning a GitHub deploy key on a headless VM. |
 | `requirements.txt` | Python dependencies (`requests`). |
 | `grid_telemetry.db` | SQLite warehouse (created automatically on first run). |
-| `data/` | Exported JSON consumed by `index.html` (and committed to git). |
+| `docs/data/` | Exported JSON consumed by `docs/index.html` (and committed to git; served by GitHub Pages). |
 | `fetch_grid.log` / `update.log` | Logs from `fetch_grid.py` / `git_push.py`. |
 
 ## Setup
@@ -37,7 +36,7 @@ python fetch_grid.py [--lookback-days N] [--backfill-days N] [--export-only]
 |---|---|---|
 | `--lookback-days N` | `2` | Days of recent data to (re)fetch and upsert on every run. Safe to run repeatedly — upserts are idempotent (`INSERT ... ON CONFLICT`), so overlapping windows just refresh/correct existing rows rather than duplicating them. |
 | `--backfill-days N` | `0` | Additional *historical* days to pull **before** the lookback window, on top of it. Use this once to seed longer history (e.g. so `week.json`/`month.json`/`year.json` aren't mostly empty). Chunked internally to respect each API's max date-range limits, so large values (e.g. 365+) will make many requests — expect it to take a while. |
-| `--export-only` | off | Skip all network calls; just regenerate the JSON files in `data/` from whatever is already in `grid_telemetry.db`. Useful for quickly re-exporting after a schema/format change to the export code, or for testing the front-end without hitting the APIs. |
+| `--export-only` | off | Skip all network calls; just regenerate the JSON files in `docs/data/` from whatever is already in `grid_telemetry.db`. Useful for quickly re-exporting after a schema/format change to the export code, or for testing the front-end without hitting the APIs. |
 
 Examples:
 ```powershell
@@ -54,8 +53,9 @@ python fetch_grid.py --export-only
 On every run this creates/migrates `grid_telemetry.db` (additive schema
 migrations only — safe to pull the latest `fetch_grid.py` and rerun against an
 existing database), then (re)writes all of:
-`data/day.json`, `data/week.json`, `data/month.json`, `data/year.json`,
-`data/previous_year.json`, `data/regional_latest.json`, `data/carbon_forecast.json`.
+`docs/data/day.json`, `docs/data/previous_day.json`, `docs/data/3days.json`,
+`docs/data/week.json`, `docs/data/month.json`, `docs/data/year.json`,
+`docs/data/previous_year.json`, `docs/data/regional_latest.json`, `docs/data/carbon_forecast.json`.
 
 **Data sources**: NESO Carbon Intensity API (national + regional), Elexon
 Insights/BMRS (`FUELINST`, `MID`, `/system/frequency`,
@@ -73,7 +73,7 @@ python git_push.py
 ```
 
 No flags. It:
-1. `git add data/*.json`
+1. `git add docs/data/*.json`
 2. Checks `git status --porcelain` — if there are no changes, exits cleanly (exit code 0) without committing.
 3. Commits with message `chore(telemetry): automated update of national, balancing, and regional grid data`.
 4. `git push origin main`.
@@ -91,10 +91,14 @@ must be served over HTTP, not opened as a `file://` URL (browsers block
 `fetch()` against local files). Any static file server works, e.g.:
 
 ```powershell
+cd docs
 python -m http.server 8000
 ```
 
 Then open `http://localhost:8000/index.html`.
+
+In production, GitHub Pages serves this same `docs/` folder directly — see
+[DEPLOYMENT.md](DEPLOYMENT.md) for how to enable it.
 
 ### Dashboard features
 - **History nav bar**: Today / Previous Day / 3 Days / Week / Month / Year / Previous Year.
@@ -112,6 +116,10 @@ Then open `http://localhost:8000/index.html`.
 - All chart/tooltip values are shown **unrounded**, exactly as stored in the source JSON.
 
 ## Automated deployment (Linux VM)
+
+> For a full copy-paste walkthrough (SCP'ing files across, installing git,
+> generating a deploy key, and connecting to GitHub step by step), see
+> [DEPLOYMENT.md](DEPLOYMENT.md).
 
 1. Copy `fetch_grid.py`, `git_push.py`, `requirements.txt`, and the repo (with
    its git remote configured) to the VM, e.g. `/opt/grid-dashboard`.

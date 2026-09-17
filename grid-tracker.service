@@ -5,10 +5,10 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-User=grid-tracker
-Group=grid-tracker
+User=root
+Group=root
 WorkingDirectory=/opt/grid-dashboard
-Environment=GIT_SSH_COMMAND=ssh -i /home/grid-tracker/.ssh/id_ed25519_grid -o IdentitiesOnly=yes
+Environment=GIT_SSH_COMMAND=ssh -i /root/.ssh/id_ed25519_grid -o IdentitiesOnly=yes
 ExecStart=/usr/bin/python3 /opt/grid-dashboard/fetch_grid.py
 ExecStart=/usr/bin/python3 /opt/grid-dashboard/git_push.py
 StandardOutput=append:/opt/grid-dashboard/service.log

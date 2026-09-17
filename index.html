@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GB Grid Telemetry</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css">
+<style>
+  :root {
+    --bg-0: #0a0e14;
+    --bg-1: #10151d;
+    --bg-2: #161c26;
+    --bg-3: #1e2630;
+    --border: #2a3340;
+    --text: #d8e0ea;
+    --text-dim: #7c8794;
+    --accent: #4fd1ff;
+
+    --c-wind: #45c4a0;
+    --c-solar: #f2c94c;
+    --c-gas: #e3654b;
+    --c-nuclear: #b085f5;
+    --c-biomass: #a3823a;
+    --c-imports: #6c8ebf;
+    --c-intensity: #ffffff;
+    --c-freq: #4fd1ff;
+    --c-balance: #f2994a;
+
+    --very-low: #1fae7a;
+    --low: #63c15f;
+    --moderate: #e0c23c;
+    --high: #e3813f;
+    --very-high: #e2503f;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-0);
+    color: var(--text);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+    font-size: 13px;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  header.top-bar h1 {
+    font-size: 15px;
+    margin: 0;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  header.top-bar h1 span { color: var(--accent); }
+
+  /* Metrics bar */
+  .metrics-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .metric-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-width: 128px;
+  }
+
+  .metric-chip .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+
+  .metric-chip .value {
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .metric-chip .value .unit {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-left: 3px;
+  }
+
+  #metric-intensity .value { color: var(--c-intensity); }
+  #metric-demand .value { color: var(--c-imports); }
+  #metric-frequency .value { color: var(--c-freq); }
+  #metric-price .value { color: var(--c-balance); }
+  #metric-generation .value { color: var(--c-wind); }
+  #metric-transfers .value { color: var(--c-imports); }
+  #metric-time .value { color: var(--accent); }
+
+  /* Nav bar */
+  nav.history-nav {
+    display: flex;
+    gap: 4px;
+    padding: 8px 16px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  nav.history-nav button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  nav.history-nav button:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  nav.history-nav button.active {
+    background: var(--accent);
+    color: #062028;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  nav.history-nav .nav-status {
+    margin-left: auto;
+    align-self: center;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* Chart viewport */
+  main.viewport {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding: 12px 16px;
+  }
+
+  .chart-panel {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px 12px;
+  }
+
+  .chart-panel .panel-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Height is auto so uPlot's legend (rendered below the canvas) has room to
+     breathe instead of overlapping the next chart panel. */
+  .chart-holder { width: 100%; }
+
+  .u-legend { font-size: 11px !important; }
+  .u-legend th { font-variant-numeric: tabular-nums; }
+
+  /* Regional section */
+  section.regional {
+    padding: 4px 16px 20px;
+  }
+
+  section.regional h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 10px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .legend-swatches {
+    display: flex;
+    gap: 10px;
+    font-size: 10px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .legend-swatches span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-dim);
+  }
+
+  .legend-swatches i {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  .region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+  }
+
+  .region-card {
+    position: relative;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    cursor: default;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .region-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    z-index: 2;
+  }
+
+  .region-card .name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .region-card .intensity {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .region-card .intensity .unit {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  .region-card .meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    text-transform: capitalize;
+  }
+
+  footer {
+    margin-top: auto;
+    padding: 8px 16px;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+  }
+
+  footer p { margin: 4px 0; line-height: 1.5; }
+
+  footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  footer a:hover { text-decoration: underline; }
+
+  /* Detailed fuel & transfer breakdown */
+  section.detail {
+    padding: 4px 16px 6px;
+  }
+
+  section.detail h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 10px 0 8px;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 10px;
+  }
+
+  .detail-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .detail-card h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 0 0 6px;
+  }
+
+  .detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+
+  .detail-row .name {
+    flex: 1 1 auto;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .detail-row .val {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .detail-row .pct {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    min-width: 46px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Grid Decarbonisation + Grid Operations summary cards */
+  section.summary {
+    padding: 4px 16px 0;
+  }
+
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 10px;
+  }
+
+  .summary-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .summary-card h3 {
+    margin: 0 0 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+
+  .decarb-body {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .gauge-wrap {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    flex: 0 0 auto;
+  }
+
+  .gauge-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+
+  .gauge-track { fill: none; stroke: var(--bg-3); stroke-width: 10; }
+
+  .gauge-progress {
+    fill: none;
+    stroke: var(--very-low);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 314.159;
+    stroke-dashoffset: 314.159;
+    transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;
+  }
+
+  .gauge-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gauge-label .pct {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .gauge-label .caption {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+  }
+
+  .decarb-submetrics {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .submetric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12px;
+  }
+
+  .submetric-row .name { color: var(--text-dim); }
+  .submetric-row .val { font-weight: 600; font-variant-numeric: tabular-nums; cursor: default; }
+  .submetric-row.low-carbon .val { color: var(--very-low); }
+  .submetric-row.fossil .val { color: var(--c-gas); }
+
+  .sparkline-holder {
+    position: relative;
+    width: 100%;
+    height: 70px;
+    margin-top: 12px;
+  }
+
+  .sparkline-holder .u-legend {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    background: rgba(10, 14, 20, 0.85);
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 10px !important;
+    z-index: 2;
+  }
+
+  .ops-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .freq-display { display: flex; align-items: baseline; gap: 10px; }
+
+  .freq-value {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--c-freq);
+    cursor: default;
+  }
+
+  .freq-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: default;
+  }
+
+  .freq-delta.rising { color: var(--low); }
+  .freq-delta.falling { color: var(--very-high); }
+  .freq-delta.flat { color: var(--text-dim); }
+
+  .net-transfer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    width: fit-content;
+    cursor: default;
+  }
+
+  .net-transfer-badge .label {
+    font-weight: 400;
+    color: var(--text-dim);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .net-transfer-badge.importing {
+    background: rgba(108, 142, 191, 0.18);
+    color: var(--c-imports);
+    border: 1px solid var(--c-imports);
+  }
+
+  .net-transfer-badge.exporting {
+    background: rgba(31, 174, 122, 0.18);
+    color: var(--very-low);
+    border: 1px solid var(--very-low);
+  }
+
+  /* Info icon + explainer modal */
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 6px;
+    border-radius: 50%;
+    border: 1px solid var(--text-dim);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: italic;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1;
+    cursor: pointer;
+    flex: 0 0 auto;
+    padding: 0;
+  }
+
+  .info-icon:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .summary-card h3, section.detail h2, section.regional h2 {
+    display: flex;
+    align-items: center;
+  }
+
+  .info-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+
+  .info-modal-overlay.open { display: flex; }
+
+  .info-modal {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    max-width: 440px;
+    width: 100%;
+    padding: 16px 18px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .info-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .info-modal-header h4 {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .info-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+  }
+
+  .info-modal-close:hover { color: var(--text); }
+
+  .info-modal-body {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-dim);
+  }
+
+  .info-modal-body code {
+    background: var(--bg-3);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top-bar">
+    <h1>GB Grid <span>Telemetry</span></h1>
+    <div class="metrics-bar" id="summaryBanner">
+      <div class="metric-chip" id="metric-time">
+        <span class="label">Time</span>
+        <span class="value">--:-- <span class="unit">UTC</span></span>
+      </div>
+      <div class="metric-chip" id="metric-price">
+        <span class="label">Wholesale Price</span>
+        <span class="value">-- <span class="unit">£/MWh</span></span>
+      </div>
+      <div class="metric-chip" id="metric-intensity">
+        <span class="label">Emissions</span>
+        <span class="value">-- <span class="unit">gCO2/kWh</span></span>
+      </div>
+      <div class="metric-chip" id="metric-demand">
+        <span class="label">Demand</span>
+        <span class="value">-- <span class="unit">GW</span></span>
+      </div>
+      <div class="metric-chip" id="metric-generation">
+        <span class="label">Generation</span>
+        <span class="value">-- <span class="unit">GW</span></span>
+      </div>
+      <div class="metric-chip" id="metric-transfers">
+        <span class="label">Transfers</span>
+        <span class="value">-- <span class="unit">GW</span></span>
+      </div>
+      <div class="metric-chip" id="metric-frequency">
+        <span class="label">System Frequency</span>
+        <span class="value">-- <span class="unit">Hz</span></span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="history-nav" id="historyNav">
+    <span class="nav-status" id="navStatus"></span>
+  </nav>
+
+  <main class="viewport">
+    <div class="chart-panel">
+      <div class="panel-title">
+        <span>National Generation Mix &amp; Carbon Intensity <button class="info-icon" data-info-key="upperChart" aria-label="About this section">i</button></span>
+        <span id="upperRange"></span>
+      </div>
+      <div class="chart-holder" id="upperChart"></div>
+    </div>
+
+    <div class="chart-panel">
+      <div class="panel-title">
+        <span>System Balancing Volume &amp; Frequency <button class="info-icon" data-info-key="lowerChart" aria-label="About this section">i</button></span>
+        <span id="lowerRange"></span>
+      </div>
+      <div class="chart-holder" id="lowerChart"></div>
+    </div>
+  </main>
+
+  <section class="summary">
+    <div class="summary-cards">
+      <div class="summary-card" id="decarbCard">
+        <h3>Grid Decarbonisation <button class="info-icon" data-info-key="decarbCard" aria-label="About this section">i</button></h3>
+        <div class="decarb-body">
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="0 0 120 120">
+              <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
+              <circle class="gauge-progress" id="decarbGaugeProgress" cx="60" cy="60" r="50"></circle>
+            </svg>
+            <div class="gauge-label">
+              <span class="pct" id="decarbPct">--%</span>
+              <span class="caption">Zero-Carbon</span>
+            </div>
+          </div>
+          <div class="decarb-submetrics">
+            <div class="submetric-row low-carbon">
+              <span class="name">Low-Carbon Output</span>
+              <span class="val" id="metric-lowcarbon">--</span>
+            </div>
+            <div class="submetric-row fossil">
+              <span class="name">Fossil Fuel Output</span>
+              <span class="val" id="metric-fossil">--</span>
+            </div>
+          </div>
+        </div>
+        <div class="sparkline-holder" id="forecastSparkline"></div>
+      </div>
+
+      <div class="summary-card" id="opsCard">
+        <h3>Grid Operations <button class="info-icon" data-info-key="opsCard" aria-label="About this section">i</button></h3>
+        <div class="ops-body">
+          <div class="freq-display">
+            <span class="freq-value" id="opsFrequency">--</span>
+            <span class="freq-delta flat" id="opsFreqDelta">--</span>
+          </div>
+          <span class="net-transfer-badge" id="netTransferBadge">
+            <span class="label">Net Transfer</span>
+            <span id="netTransferValue">--</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="detail">
+    <h2>Fuel &amp; Transfer Breakdown <button class="info-icon" data-info-key="detailGrid" aria-label="About this section">i</button></h2>
+    <div class="detail-grid" id="detailGrid"></div>
+  </section>
+
+  <section class="regional">
+    <h2>
+      Regional Carbon Intensity — 14 DNO Regions <button class="info-icon" data-info-key="regionGrid" aria-label="About this section">i</button>
+      <span class="legend-swatches">
+        <span><i style="background:var(--very-low)"></i>very low</span>
+        <span><i style="background:var(--low)"></i>low</span>
+        <span><i style="background:var(--moderate)"></i>moderate</span>
+        <span><i style="background:var(--high)"></i>high</span>
+        <span><i style="background:var(--very-high)"></i>very high</span>
+      </span>
+    </h2>
+    <div class="region-grid" id="regionGrid"></div>
+  </section>
+
+  <footer>
+    <p>Data refreshed from static exports in <code>/data</code>. Values shown are unrounded source readings.</p>
+    <p>
+      The data comes from the <a href="https://bmrs.elexon.co.uk/" target="_blank" rel="noopener noreferrer">Elexon Insights Solution</a>,
+      the <a href="https://www.neso.energy/data-portal" target="_blank" rel="noopener noreferrer">National Energy System Operator Data Portal</a>,
+      and the <a href="https://carbonintensity.org.uk/" target="_blank" rel="noopener noreferrer">Carbon Intensity API</a>
+      (a project by the National Energy System Operator and the University Of Oxford Department Of Computer Science).
+      <a href="https://www.elexon.co.uk/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/" target="_blank" rel="noopener noreferrer">Elexon&rsquo;s licence</a>
+      requires the following statement: Contains BMRS data &copy; Elexon Limited copyright and database right 2026.
+    </p>
+  </footer>
+</div>
+
+<div class="info-modal-overlay" id="infoModalOverlay">
+  <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+    <div class="info-modal-header">
+      <h4 id="infoModalTitle"></h4>
+      <button class="info-modal-close" id="infoModalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="info-modal-body" id="infoModalBody"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  // ------------------------------------------------------------------
+  // Configuration
+  // ------------------------------------------------------------------
+  const DATA_DIR = "data";
+
+  const TABS = [
+    { key: "day",           label: "Today" },
+    { key: "previous_day",  label: "Previous Day" },
+    { key: "3days",         label: "3 Days" },
+    { key: "week",          label: "Week" },
+    { key: "month",         label: "Month" },
+    { key: "year",          label: "Year" },
+    { key: "previous_year", label: "Previous Year" },
+  ];
+
+  const INDEX_COLORS = {
+    "very low": "var(--very-low)",
+    "low": "var(--low)",
+    "moderate": "var(--moderate)",
+    "high": "var(--high)",
+    "very high": "var(--very-high)",
+  };
+
+  const SYNC_KEY = "grid-telemetry-sync";
+  const AUTO_REFRESH_MS = 60_000; // re-poll "Today" tab periodically for a real-time feel
+
+  // Detailed fuel/transfer breakdown cards. Each row sums one or more raw MW
+  // columns from the active dataset (e.g. France = IFA + IFA2 + ElecLink).
+  const DETAIL_CATEGORIES = [
+    {
+      title: "Fossil Fuels (Gas)",
+      rows: [{ label: "Gas", columns: ["gas_mw"] }],
+    },
+    {
+      title: "Renewables",
+      rows: [
+        { label: "Wind", columns: ["wind_mw"] },
+        { label: "Solar", columns: ["solar_mw"] },
+        { label: "Hydro", columns: ["hydro_mw"] },
+      ],
+    },
+    {
+      title: "Other Sources",
+      rows: [
+        { label: "Nuclear", columns: ["nuclear_mw"] },
+        { label: "Biomass", columns: ["biomass_mw"] },
+      ],
+    },
+    {
+      title: "Interconnectors",
+      rows: [
+        { label: "Belgium", columns: ["intercon_nemo_mw"] },
+        { label: "Denmark", columns: ["intercon_viking_mw"] },
+        { label: "France", columns: ["intercon_ifa_mw", "intercon_ifa2_mw", "intercon_eleclink_mw"] },
+        { label: "Ireland", columns: ["intercon_moyle_mw", "intercon_ewic_mw", "intercon_greenlink_mw"] },
+        { label: "Netherlands", columns: ["intercon_britned_mw"] },
+        { label: "Norway", columns: ["intercon_nsl_mw"] },
+      ],
+    },
+    {
+      title: "Storage",
+      rows: [
+        { label: "Pumped Storage", columns: ["pumped_storage_mw"] },
+        { label: "Battery", columns: ["battery_storage_mw"] },
+      ],
+    },
+  ];
+
+  let activeTabKey = TABS[0].key;
+  let refreshTimer = null;
+
+  // ------------------------------------------------------------------
+  // Data helpers
+  // ------------------------------------------------------------------
+
+  /** Convert a compact {columns, rows} payload into named column arrays. */
+  function toColumns(payload) {
+    const { columns, rows } = payload;
+    const out = {};
+    columns.forEach((name, colIdx) => {
+      out[name] = rows.map(row => row[colIdx]);
+    });
+    out.__rowCount = rows.length;
+    return out;
+  }
+
+  /** Parse 'YYYY-MM-DDThh:mmZ' into unix seconds (uPlot time scale unit). */
+  function toUnixSeconds(isoStamp) {
+    return Date.parse(isoStamp) / 1000;
+  }
+
+  /** Prefer a typed Float64Array (fast, GC-friendly); fall back to a plain
+   *  array only if the column contains nulls, since typed arrays can't hold
+   *  null gaps and uPlot needs real gaps to render broken lines correctly. */
+  function toSeriesArray(values) {
+    const hasGap = values.some(v => v === null || v === undefined);
+    if (!hasGap) return Float64Array.from(values);
+    return values.map(v => (v === null || v === undefined ? null : v));
+  }
+
+  /** Format a raw numeric value for legend/tooltip display without any
+   *  rounding — mirrors exactly what is stored in the source JSON. */
+  function exactValueFormatter(u, v) {
+    if (v === null || v === undefined || Number.isNaN(v)) return "--";
+    return String(v);
+  }
+
+  /** Last non-null/undefined entry of an array, or null if none exists. */
+  function lastNonNull(arr) {
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i] !== null && arr[i] !== undefined) return arr[i];
+    }
+    return null;
+  }
+
+  /** Build a {columnName: latestValue} snapshot from a parsed timeline payload. */
+  function buildSnapshot(cols) {
+    const snapshot = {};
+    for (const key of Object.keys(cols)) {
+      if (key === "__rowCount") continue;
+      snapshot[key] = lastNonNull(cols[key]);
+    }
+    return snapshot;
+  }
+
+  /** Sum a snapshot's named columns; returns null if none of them have a value. */
+  function sumColumns(snapshot, columns) {
+    const values = columns.map(c => snapshot[c]).filter(v => v !== null && v !== undefined);
+    if (!values.length) return null;
+    return values.reduce((a, b) => a + b, 0);
+  }
+
+  /** Convert raw MW to a GW display string, e.g. 13330 -> "13.33 GW". */
+  function formatGW(mw) {
+    return (mw === null || mw === undefined) ? "--" : `${(mw / 1000).toFixed(2)} GW`;
+  }
+
+  /** Share of total demand as a percentage with 1 decimal place. */
+  function formatSharePct(value, totalDemandMw) {
+    if (value === null || value === undefined || !totalDemandMw) return "--";
+    return `${(value / totalDemandMw * 100).toFixed(1)}%`;
+  }
+
+  // ------------------------------------------------------------------
+  // uPlot chart construction
+  // ------------------------------------------------------------------
+  // Fixed canvas pixel heights (decoupled from the container's CSS height,
+  // which is auto so uPlot's legend can render below the canvas without
+  // overlapping the next panel).
+  const UPPER_CHART_HEIGHT = 300;
+  const LOWER_CHART_HEIGHT = 200;
+
+  function buildUpperChart(container) {
+    const opts = {
+      width: container.clientWidth,
+      height: UPPER_CHART_HEIGHT,
+      cursor: { sync: { key: SYNC_KEY } },
+      scales: {
+        x: { time: true },
+        mix: { auto: true },
+        intensity: { auto: true },
+      },
+      axes: [
+        { stroke: "#7c8794", grid: { stroke: "#20293380" } },
+        { scale: "mix", stroke: "#7c8794", grid: { stroke: "#20293380" }, label: "MW" },
+        { scale: "intensity", stroke: "#7c8794", side: 1, grid: { show: false }, label: "gCO2/kWh" },
+      ],
+      series: [
+        { label: "Time" },
+        { label: "Wind (MW)",     scale: "mix",       stroke: "#45c4a0", width: 1.5, points: { show: false }, value: exactValueFormatter },
+        { label: "Solar (MW)",    scale: "mix",       stroke: "#f2c94c", width: 1.5, points: { show: false }, value: exactValueFormatter },
+        { label: "Gas (MW)",      scale: "mix",       stroke: "#e3654b", width: 1.5, points: { show: false }, value: exactValueFormatter },
+        { label: "Nuclear (MW)",  scale: "mix",       stroke: "#b085f5", width: 1.5, points: { show: false }, value: exactValueFormatter },
+        { label: "Biomass (MW)",  scale: "mix",       stroke: "#a3823a", width: 1.5, points: { show: false }, value: exactValueFormatter },
+        { label: "Imports (MW)",  scale: "mix",       stroke: "#6c8ebf", width: 1.5, points: { show: false }, value: exactValueFormatter },
+        { label: "Carbon Intensity", scale: "intensity", stroke: "#ffffff", width: 2, dash: [4, 3], points: { show: false }, value: exactValueFormatter },
+      ],
+    };
+    return new uPlot(opts, [[0], [0], [0], [0], [0], [0], [0], [0]], container);
+  }
+
+  function buildLowerChart(container) {
+    const opts = {
+      width: container.clientWidth,
+      height: LOWER_CHART_HEIGHT,
+      cursor: { sync: { key: SYNC_KEY } },
+      scales: {
+        x: { time: true },
+        balance: { auto: true },
+        freq: { auto: true },
+      },
+      axes: [
+        { stroke: "#7c8794", grid: { stroke: "#20293380" } },
+        { scale: "balance", stroke: "#7c8794", grid: { stroke: "#20293380" }, label: "MW" },
+        { scale: "freq", stroke: "#7c8794", side: 1, grid: { show: false }, label: "Hz" },
+      ],
+      series: [
+        { label: "Time" },
+        { label: "Balancing Volume", scale: "balance", stroke: "#f2994a", width: 1.5, fill: "rgba(242,153,74,0.15)", points: { show: false }, value: exactValueFormatter },
+        { label: "System Frequency", scale: "freq", stroke: "#4fd1ff", width: 1.5, points: { show: false }, value: exactValueFormatter },
+      ],
+    };
+    return new uPlot(opts, [[0], [0], [0]], container);
+  }
+
+  const upperContainer = document.getElementById("upperChart");
+  const lowerContainer = document.getElementById("lowerChart");
+  const upperChart = buildUpperChart(upperContainer);
+  const lowerChart = buildLowerChart(lowerContainer);
+
+  new ResizeObserver(() => {
+    upperChart.setSize({ width: upperContainer.clientWidth, height: UPPER_CHART_HEIGHT });
+    lowerChart.setSize({ width: lowerContainer.clientWidth, height: LOWER_CHART_HEIGHT });
+  }).observe(document.querySelector("main.viewport"));
+
+  // 48h carbon intensity forecast sparkline (Decarbonisation card). Legend is
+  // enabled (for exact-value hover tooltips) but repositioned via CSS as a
+  // small floating overlay so the chart itself stays "mini".
+  const SPARKLINE_HEIGHT = 70;
+
+  function buildSparklineChart(container) {
+    const opts = {
+      width: container.clientWidth || 280,
+      height: SPARKLINE_HEIGHT,
+      cursor: { show: true },
+      scales: { x: { time: true } },
+      axes: [{ show: false }, { show: false }],
+      series: [
+        { label: "Time" },
+        {
+          label: "Forecast",
+          stroke: "#ffffff",
+          width: 1.5,
+          fill: "rgba(255,255,255,0.08)",
+          points: { show: false },
+          value: exactValueFormatter,
+        },
+      ],
+    };
+    return new uPlot(opts, [[0], [0]], container);
+  }
+
+  const sparklineContainer = document.getElementById("forecastSparkline");
+  const sparklineChart = buildSparklineChart(sparklineContainer);
+
+  new ResizeObserver(() => {
+    sparklineChart.setSize({ width: sparklineContainer.clientWidth, height: SPARKLINE_HEIGHT });
+  }).observe(sparklineContainer);
+
+  // ------------------------------------------------------------------
+  // Summary banner + detailed fuel/transfer breakdown
+  // ------------------------------------------------------------------
+  function updateBanner(snapshot, latestTimestamp) {
+    setTimeMetric(latestTimestamp);
+    setRawMetric("metric-price", snapshot.wholesale_price_gbp_mwh, "\u00a3/MWh");
+    setRawMetric("metric-intensity", snapshot.carbon_intensity, "gCO2/kWh");
+    setGwMetric("metric-demand", snapshot.total_demand_mw);
+    setGwMetric("metric-generation", snapshot.total_generation_mw);
+    setGwMetric("metric-transfers", snapshot.total_net_transfer_mw);
+    setRawMetric("metric-frequency", snapshot.system_frequency, "Hz");
+  }
+
+  function setTimeMetric(isoStamp) {
+    const el = document.querySelector("#metric-time .value");
+    const hhmm = isoStamp ? isoStamp.slice(11, 16) : "--:--";
+    el.innerHTML = `${hhmm} <span class="unit">UTC</span>`;
+  }
+
+  function setRawMetric(id, value, unit) {
+    const el = document.querySelector(`#${id} .value`);
+    const shown = (value === null || value === undefined) ? "--" : String(value);
+    el.innerHTML = `${shown} <span class="unit">${unit}</span>`;
+  }
+
+  function setGwMetric(id, mw) {
+    const el = document.querySelector(`#${id} .value`);
+    const shown = (mw === null || mw === undefined) ? "--" : (mw / 1000).toFixed(2);
+    el.innerHTML = `${shown} <span class="unit">GW</span>`;
+  }
+
+  // ------------------------------------------------------------------
+  // Grid Decarbonisation card (gauge + sub-metrics + 48h forecast sparkline)
+  // ------------------------------------------------------------------
+  const GAUGE_CIRCUMFERENCE = 2 * Math.PI * 50; // r=50, see .gauge-progress
+
+  function gaugeColor(pct) {
+    if (pct >= 75) return "var(--very-low)";
+    if (pct >= 50) return "var(--low)";
+    if (pct >= 25) return "var(--moderate)";
+    return "var(--high)";
+  }
+
+  function updateDecarbCard(snapshot) {
+    const pct = snapshot.zero_carbon_share_pct;
+    const progressEl = document.getElementById("decarbGaugeProgress");
+    const pctText = document.getElementById("decarbPct");
+    if (pct === null || pct === undefined) {
+      progressEl.style.strokeDashoffset = String(GAUGE_CIRCUMFERENCE);
+      pctText.textContent = "--%";
+      pctText.removeAttribute("title");
+    } else {
+      const clamped = Math.max(0, Math.min(100, pct));
+      progressEl.style.strokeDashoffset = String(GAUGE_CIRCUMFERENCE * (1 - clamped / 100));
+      progressEl.style.stroke = gaugeColor(clamped);
+      pctText.textContent = `${pct.toFixed(1)}%`;
+      pctText.title = String(pct); // exact unrounded value on hover
+    }
+
+    const fossilMw = sumColumns(snapshot, ["gas_mw", "coal_mw"]);
+    setSubmetric("metric-lowcarbon", snapshot.zero_carbon_mw);
+    setSubmetric("metric-fossil", fossilMw);
+  }
+
+  function setSubmetric(id, mw) {
+    const el = document.getElementById(id);
+    el.textContent = formatGW(mw);
+    if (mw === null || mw === undefined) el.removeAttribute("title");
+    else el.title = String(mw); // exact unrounded MW on hover
+  }
+
+  async function loadCarbonForecast() {
+    try {
+      const res = await fetch(`${DATA_DIR}/carbon_forecast.json?v=${Date.now()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = await res.json();
+      const cols = toColumns(payload);
+      if (!cols.__rowCount) return;
+      const x = toSeriesArray(cols.timestamp.map(toUnixSeconds));
+      sparklineChart.setData([x, toSeriesArray(cols.forecast_intensity)]);
+    } catch (err) {
+      console.error("Failed to load carbon forecast", err);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Grid Operations card (frequency delta arrow + net transfer badge)
+  // ------------------------------------------------------------------
+  function updateOperationsCard(snapshot) {
+    const freq = snapshot.system_frequency;
+    const freqEl = document.getElementById("opsFrequency");
+    if (freq === null || freq === undefined) {
+      freqEl.textContent = "--";
+      freqEl.removeAttribute("title");
+    } else {
+      freqEl.textContent = `${freq} Hz`;
+      freqEl.title = String(freq); // exact unrounded value on hover
+    }
+
+    const delta = snapshot.freq_delta;
+    const deltaEl = document.getElementById("opsFreqDelta");
+    if (delta === null || delta === undefined) {
+      deltaEl.textContent = "--";
+      deltaEl.className = "freq-delta flat";
+      deltaEl.removeAttribute("title");
+    } else {
+      const direction = delta > 0 ? "rising" : (delta < 0 ? "falling" : "flat");
+      const arrow = delta > 0 ? "\u25B2" : (delta < 0 ? "\u25BC" : "\u25AC");
+      const sign = delta > 0 ? "+" : "";
+      deltaEl.textContent = `${arrow} ${sign}${delta.toFixed(2)} Hz`;
+      deltaEl.title = String(delta); // exact unrounded 10-min delta on hover
+      deltaEl.className = `freq-delta ${direction}`;
+    }
+
+    const netTransfer = snapshot.net_interconnector_mw;
+    const badge = document.getElementById("netTransferBadge");
+    const valueEl = document.getElementById("netTransferValue");
+    if (netTransfer === null || netTransfer === undefined) {
+      valueEl.textContent = "--";
+      valueEl.removeAttribute("title");
+      badge.className = "net-transfer-badge";
+    } else {
+      const importing = netTransfer >= 0;
+      valueEl.textContent = `${importing ? "Importing" : "Exporting"} ${formatGW(Math.abs(netTransfer))}`;
+      valueEl.title = String(netTransfer); // exact unrounded MW on hover
+      badge.className = `net-transfer-badge ${importing ? "importing" : "exporting"}`;
+    }
+  }
+
+  function renderDetailTable(snapshot) {
+    const grid = document.getElementById("detailGrid");
+    const totalDemand = snapshot.total_demand_mw;
+    grid.innerHTML = "";
+
+    DETAIL_CATEGORIES.forEach(category => {
+      const card = document.createElement("div");
+      card.className = "detail-card";
+
+      const heading = document.createElement("h3");
+      heading.textContent = category.title;
+      card.appendChild(heading);
+
+      category.rows.forEach(row => {
+        const value = sumColumns(snapshot, row.columns);
+        const rowEl = document.createElement("div");
+        rowEl.className = "detail-row";
+        rowEl.innerHTML = `
+          <span class="name">${row.label}</span>
+          <span class="val">${formatGW(value)}</span>
+          <span class="pct">${formatSharePct(value, totalDemand)}</span>
+        `;
+        card.appendChild(rowEl);
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // Timeline (upper/lower chart) loading
+  // ------------------------------------------------------------------
+  async function loadTimeline(tabKey) {
+    setNavStatus(`Loading ${tabKey}...`);
+    try {
+      const res = await fetch(`${DATA_DIR}/${tabKey}.json?v=${Date.now()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = await res.json();
+      const cols = toColumns(payload);
+
+      if (!cols.__rowCount) {
+        setNavStatus(`${tabKey}: no data available`);
+        return;
+      }
+
+      const x = toSeriesArray(cols.timestamp.map(toUnixSeconds));
+
+      upperChart.setData([
+        x,
+        toSeriesArray(cols.wind_mw),
+        toSeriesArray(cols.solar_mw),
+        toSeriesArray(cols.gas_mw),
+        toSeriesArray(cols.nuclear_mw),
+        toSeriesArray(cols.biomass_mw),
+        toSeriesArray(cols.imports_mw),
+        toSeriesArray(cols.carbon_intensity),
+      ]);
+
+      lowerChart.setData([
+        x,
+        toSeriesArray(cols.balancing_volume_mw),
+        toSeriesArray(cols.system_frequency),
+      ]);
+
+      const snapshot = buildSnapshot(cols);
+      updateBanner(snapshot, cols.timestamp[cols.timestamp.length - 1]);
+      renderDetailTable(snapshot);
+      updateDecarbCard(snapshot);
+      updateOperationsCard(snapshot);
+
+      const first = cols.timestamp[0];
+      const last = cols.timestamp[cols.timestamp.length - 1];
+      document.getElementById("upperRange").textContent = `${first} \u2192 ${last}`;
+      document.getElementById("lowerRange").textContent = `${cols.__rowCount} points`;
+      setNavStatus(`${cols.__rowCount} points loaded`);
+    } catch (err) {
+      console.error("Failed to load timeline", tabKey, err);
+      setNavStatus(`${tabKey}: failed to load (${err.message})`);
+    }
+  }
+
+  function setNavStatus(text) {
+    document.getElementById("navStatus").textContent = text;
+  }
+
+  // ------------------------------------------------------------------
+  // Nav bar wiring
+  // ------------------------------------------------------------------
+  function buildNav() {
+    const nav = document.getElementById("historyNav");
+    const status = document.getElementById("navStatus");
+    TABS.forEach(tab => {
+      const btn = document.createElement("button");
+      btn.textContent = tab.label;
+      btn.dataset.key = tab.key;
+      if (tab.key === activeTabKey) btn.classList.add("active");
+      btn.addEventListener("click", () => selectTab(tab.key));
+      nav.insertBefore(btn, status);
+    });
+  }
+
+  function selectTab(key) {
+    activeTabKey = key;
+    document.querySelectorAll("#historyNav button").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.key === key);
+    });
+    loadTimeline(key);
+    restartAutoRefresh();
+  }
+
+  function restartAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    if (activeTabKey === "day") {
+      refreshTimer = setInterval(() => loadTimeline(activeTabKey), AUTO_REFRESH_MS);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Regional section
+  // ------------------------------------------------------------------
+  async function loadRegional() {
+    const grid = document.getElementById("regionGrid");
+    try {
+      const res = await fetch(`${DATA_DIR}/regional_latest.json?v=${Date.now()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = await res.json();
+      const cols = toColumns(payload);
+
+      grid.innerHTML = "";
+      for (let i = 0; i < cols.__rowCount; i++) {
+        const card = document.createElement("div");
+        card.className = "region-card";
+        const indexLevel = cols.index_level[i] || "moderate";
+        card.style.borderLeftColor = INDEX_COLORS[indexLevel] || "var(--border)";
+
+        const intensity = cols.carbon_intensity[i];
+        const intensityText = (intensity === null || intensity === undefined) ? "--" : String(intensity);
+
+        card.innerHTML = `
+          <div class="name">${cols.dno_region[i]}</div>
+          <div class="intensity" style="color:${INDEX_COLORS[indexLevel] || "var(--text)"}">
+            ${intensityText}<span class="unit"> gCO2/kWh</span>
+          </div>
+          <div class="meta">
+            <span>${indexLevel}</span>
+            <span>${cols.top_fuel[i] || "--"}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+    } catch (err) {
+      console.error("Failed to load regional snapshot", err);
+      grid.innerHTML = `<div style="color:var(--text-dim)">Regional data failed to load (${err.message})</div>`;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Info modal (section header explainers)
+  // ------------------------------------------------------------------
+  const INFO_CONTENT = {
+    upperChart: {
+      title: "National Generation Mix & Carbon Intensity",
+      body: "Shows the generation mix at a point in time (wind, solar, gas, nuclear, biomass, imports, in MW) alongside national carbon intensity (gCO2/kWh). " +
+        "GB solar isn't separately metered in the <code>FUELINST</code> feed, so it is estimated and can occasionally show <code>--</code>/null for periods where one of its two source values hasn't been published yet — this is expected upstream latency, not an error.",
+    },
+    lowerChart: {
+      title: "System Balancing Volume & Frequency",
+      body: "Shows the net imbalance volume (MW) National Grid ESO uses to keep supply and demand balanced, alongside the live system frequency (Hz). " +
+        "Frequency is targeted at 50Hz; sustained deviation from this triggers automatic balancing actions.",
+    },
+    decarbCard: {
+      title: "Grid Decarbonisation",
+      body: "Shows the current share of electricity generation coming from zero-carbon sources (wind, solar, nuclear, hydro) versus fossil fuels, " +
+        "plus a 48-hour forecast of national carbon intensity.",
+    },
+    opsCard: {
+      title: "Grid Operations",
+      body: "Shows the live system frequency and how it has moved over the last 10 minutes, plus the net electricity being imported or exported via GB's interconnectors.",
+    },
+    detailGrid: {
+      title: "Fuel & Transfer Breakdown",
+      body: "This is the latest fuel & transfer breakdown for electricity generation within the UK. Interconnectors show imported electricity as a positive value, " +
+        "and negative when the UK has excess electricity and sells electricity to the interconnector when the price is favourable.",
+    },
+    regionGrid: {
+      title: "Regional Carbon Intensity — 14 DNO Regions",
+      body: "Shows the current carbon intensity and dominant fuel source for each of the 14 GB Distribution Network Operator (DNO) regions.",
+    },
+  };
+
+  function setupInfoModal() {
+    const overlay = document.getElementById("infoModalOverlay");
+    const titleEl = document.getElementById("infoModalTitle");
+    const bodyEl = document.getElementById("infoModalBody");
+
+    function openInfo(key) {
+      const info = INFO_CONTENT[key];
+      if (!info) return;
+      titleEl.textContent = info.title;
+      bodyEl.innerHTML = info.body;
+      overlay.classList.add("open");
+    }
+
+    function closeInfo() {
+      overlay.classList.remove("open");
+    }
+
+    document.querySelectorAll(".info-icon").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openInfo(btn.dataset.infoKey);
+      });
+    });
+
+    document.getElementById("infoModalClose").addEventListener("click", closeInfo);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeInfo();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeInfo();
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // Init
+  // ------------------------------------------------------------------
+  buildNav();
+  loadTimeline(activeTabKey);
+  loadRegional();
+  loadCarbonForecast();
+  setupInfoModal();
+  restartAutoRefresh();
+  setInterval(loadRegional, AUTO_REFRESH_MS);
+  setInterval(loadCarbonForecast, AUTO_REFRESH_MS);
+})();
+</script>
+</body>
+</html>

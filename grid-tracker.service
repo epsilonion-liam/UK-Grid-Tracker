@@ -1,0 +1,19 @@
+[Unit]
+Description=GB Grid Dashboard - fetch telemetry and push to GitOps repo
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=grid-tracker
+Group=grid-tracker
+WorkingDirectory=/opt/grid-dashboard
+Environment=GIT_SSH_COMMAND=ssh -i /home/grid-tracker/.ssh/id_ed25519_grid -o IdentitiesOnly=yes
+ExecStart=/usr/bin/python3 /opt/grid-dashboard/fetch_grid.py
+ExecStart=/usr/bin/python3 /opt/grid-dashboard/git_push.py
+StandardOutput=append:/opt/grid-dashboard/service.log
+StandardError=append:/opt/grid-dashboard/service.log
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

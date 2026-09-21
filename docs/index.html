@@ -1344,7 +1344,7 @@
     upperChart: {
       title: "National Generation Mix & Carbon Intensity",
       body: "Shows the generation mix at a point in time (wind, solar, gas, nuclear, biomass, imports, in MW) alongside national carbon intensity (gCO2/kWh). " +
-        "Solar isn't metered by Elexon at all, and Elexon's wind figure only covers transmission-connected wind farms, so both are combined with NESO's embedded (distribution-connected) generation estimates — see the Fuel &amp; Transfer Breakdown info for details.",
+        "Solar isn't metered by Elexon at all, and Elexon's wind figure only covers transmission connected wind farms, so both are combined with NESO's embedded (distribution-connected) generation estimates — see the Fuel &amp; Transfer Breakdown info for details.",
     },
     lowerChart: {
       title: "System Balancing Volume & Frequency",
@@ -1364,11 +1364,11 @@
       title: "Fuel & Transfer Breakdown",
       body: "This is the latest fuel & transfer breakdown for electricity generation within the UK. Interconnectors show imported electricity as a positive value, " +
         "and negative when the UK has excess electricity and sells electricity to the interconnector when the price is favourable." +
-        "<br><br><strong>How accurate is this?</strong> Gas, coal, nuclear, biomass, hydro and interconnector flows come directly from Elexon's <code>FUELINST</code> meter readings (transmission-connected generation only). " +
-        "Solar isn't metered by Elexon at all, and its wind figure only covers transmission-connected wind farms — both are supplemented with NESO's Demand Data Update dataset, which estimates embedded (distribution-connected, e.g. rooftop solar) generation. " +
-        "Battery storage shows <code>--</code> because Elexon doesn't yet publish battery charge/discharge data publicly — this affects every GB grid dashboard, not just this one. " +
+        "<br><br><strong>How accurate is this?</strong> Gas, coal, nuclear, biomass, hydro and interconnector flows come directly from Elexon's <code>FUELINST</code> meter readings (transmission connected generation only). " +
+        "Solar isn't metered by Elexon at all, and its wind figure only covers transmission-connected wind farms both are supplemented with NESO's Demand Data Update dataset, which estimates embedded (distribution connected, e.g. rooftop solar) generation. " +
+        "Battery storage shows <code>--</code> because Elexon doesn't yet publish battery charge/discharge data publicly, this affects every GB grid dashboard, not just this one. " +
         "Percentages are relative to total demand (generation + net imports + storage discharge − storage charging), so they should sum to ~100%." +
-        "<br><br><strong>Why do figures differ from other dashboards (e.g. grid.iamkate.com)?</strong> They pull from the same public Elexon/NESO feeds, so figures should be broadly similar, but rarely identical: each site combines the feeds slightly differently (e.g. exactly how embedded generation is blended in), computes its \"demand\" denominator independently, and refreshes on its own schedule — so a side-by-side comparison is really comparing two independent snapshots/estimates of the same underlying grid, not the same number twice.",
+        "<br><br><strong>Why do figures differ from other dashboards (e.g. grid.iamkate.com)?</strong> They pull from the same public Elexon/NESO feeds, so figures should be broadly similar, but rarely identical: each site combines the feeds slightly differently (e.g. exactly how embedded generation is blended in), computes its \"demand\" denominator independently, and refreshes on its own schedule so a side-by-side comparison is really comparing two independent snapshots/estimates of the same underlying grid, not the same number twice.",
     },
     regionGrid: {
       title: "Regional Carbon Intensity — 14 DNO Regions",

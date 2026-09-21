@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms of Service | GB National Grid Live</title>
+<meta name="description" content="Terms of Service for GB National Grid Live, a free dashboard published by UK Politics Decoded tracking Great Britain's electricity grid.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="http://nationalgrid.ukpoliticsdecoded.uk/terms.html">
+<link rel="icon" href="https://ukpoliticsdecoded.uk/assets/images/logo.webp" type="image/webp">
+<style>
+  :root {
+    --bg-0: #0a0e14;
+    --bg-2: #161c26;
+    --border: #2a3340;
+    --text: #d8e0ea;
+    --text-dim: #7c8794;
+    --accent: #4fd1ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-0);
+    color: var(--text);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 20px 48px;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  .updated {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    margin: 0 0 28px;
+  }
+  h2 {
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin: 32px 0 12px;
+    scroll-margin-top: 16px;
+  }
+  p, li { font-size: 14px; color: var(--text); }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    background: var(--bg-2);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+  footer p { color: var(--text-dim); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Terms of Service</h1>
+  <p class="updated">Last updated: 21 September 2026.</p>
+
+  <h2 id="acceptance">Acceptance of these terms</h2>
+  <p>By accessing or using the GB National Grid Live dashboard ("this dashboard"), published by
+    <a href="https://ukpoliticsdecoded.uk/">UK Politics Decoded</a>, you agree to these terms. If you do not agree,
+    please do not use this dashboard.</p>
+
+  <h2 id="what-is-this">What this dashboard is</h2>
+  <p>This dashboard is a free, public interest tool that visualises Great Britain's national electricity grid:
+    generation mix by fuel type, wholesale electricity price, carbon intensity, system frequency, interconnector
+    flows with mainland Europe and Ireland, and regional carbon intensity across all 14 GB Distribution Network
+    Operator (DNO) regions. It is built entirely on data obtained from the
+    <a href="https://bmrs.elexon.co.uk/" target="_blank" rel="noopener noreferrer">Elexon Insights Solution</a>
+    (BMRS) API, the
+    <a href="https://www.neso.energy/data-portal" target="_blank" rel="noopener noreferrer">National Energy System
+    Operator (NESO) Data Portal</a>, and the
+    <a href="https://carbonintensity.org.uk/" target="_blank" rel="noopener noreferrer">Carbon Intensity API</a>
+    (a project by NESO and the University of Oxford Department of Computer Science). It is not an official
+    government service, and is not affiliated with, endorsed by, or operated on behalf of NESO, Elexon, Ofgem, or
+    any other public body.</p>
+
+  <h2 id="data-sources">Data sources</h2>
+  <p>This dashboard is built entirely from the following official, publicly available sources. We do not collect
+    or generate any original grid telemetry ourselves:</p>
+  <ul>
+    <li><strong>Elexon Insights Solution (BMRS)</strong> — 5-minute metered generation by fuel type
+      (<code>FUELINST</code>), wholesale electricity price (<code>MID</code>), system frequency, and net
+      imbalance/balancing volume. This covers transmission-connected generation and every GB interconnector.</li>
+    <li><strong>NESO Demand Data Update</strong> — half-hourly estimates of embedded (distribution-connected)
+      wind and solar generation, which the Elexon feed above does not capture, since it only meters
+      transmission-connected generation.</li>
+    <li><strong>NESO Carbon Intensity API</strong> — 30-minute national and regional carbon intensity, a 48-hour
+      forecast, and fuel-mix percentages used as a fallback solar estimate for history older than the embedded
+      generation dataset's rolling ~2 month window.</li>
+  </ul>
+  <p>Neither Elexon nor NESO have reviewed, endorsed, or approved this dashboard or any figure derived from their
+    data.</p>
+
+  <h2 id="methodology">Methodology</h2>
+  <p>This dashboard performs independent processing on top of the raw sources listed above. In summary:</p>
+  <ul>
+    <li><strong>Settlement alignment.</strong> 5-minute <code>FUELINST</code> readings are floored to their
+      enclosing half-hour settlement period to align with the half-hourly NESO feeds.</li>
+    <li><strong>Embedded generation.</strong> Solar and wind figures combine Elexon's transmission-connected
+      metered output with NESO's embedded generation estimate, so totals reflect the whole of GB, not just
+      transmission-connected sites.</li>
+    <li><strong>Total demand.</strong> Calculated as active generation + net interconnector transfers + storage
+      discharge − storage charging, so that per-fuel percentages sum to approximately 100% of demand.</li>
+    <li><strong>Decarbonisation share.</strong> The zero-carbon percentage sums wind, solar, nuclear and hydro
+      output as a share of total generation.</li>
+    <li><strong>Refresh cadence.</strong> Data is fetched and republished roughly every 15 minutes by an automated
+      pipeline; historical views (today, previous day, week, month, year) are regenerated from a local data
+      warehouse on every run.</li>
+  </ul>
+  <p>Full implementation detail, including the data pipeline's source code, is published in the
+    <a href="https://github.com/epsilonion-liam/UK-Grid-Tracker" target="_blank" rel="noopener noreferrer">GitHub
+    repository</a>, for anyone who wants to audit or reproduce the methodology exactly.</p>
+
+  <h2 id="no-warranty">No warranty, use at your own risk</h2>
+  <p>This dashboard is provided "as is" and "as available", without warranties of any kind, express or implied,
+    including but not limited to accuracy, completeness, timeliness, or fitness for a particular purpose. In
+    particular, and without limiting the general disclaimer above:</p>
+  <ul>
+    <li>Figures may be incomplete, delayed, or revised after publication, as explained via the (i) info icons
+      throughout the dashboard (e.g. embedded generation coverage, storage accounting, and upstream latency
+      caveats).</li>
+    <li>Solar and wind figures for history older than the NESO embedded generation dataset's rolling ~2 month
+      window fall back to a percentage-based estimate, which is less precise than directly metered/embedded data.</li>
+    <li>Battery storage currently shows <code>--</code> because Elexon does not yet publicly publish battery
+      charge/discharge data — this affects every dashboard built on this data, not just this one.</li>
+    <li>Underlying source data may itself contain errors, omissions, or reporting inconsistencies introduced by
+      Elexon or NESO.</li>
+    <li>This dashboard, its underlying pipeline, and its published JSON data files may be unavailable, incorrect,
+      or discontinued at any time without notice.</li>
+  </ul>
+  <p>You should not rely on this dashboard as the sole basis for any legal, financial, safety, journalistic, or
+    other significant decision. Always refer to official sources (Elexon and NESO) to verify any figure before
+    relying on it.</p>
+
+  <h2 id="liability">Limitation of liability</h2>
+  <p>To the fullest extent permitted by law, UK Politics Decoded and its contributors shall not be liable for any
+    direct, indirect, incidental, consequential, or other damages arising from your use of, or inability to use,
+    this dashboard or the data it displays.</p>
+
+  <h2 id="licensing">Underlying data and source code licensing</h2>
+  <p>The published JSON data files that power this dashboard are available in the
+    <a href="https://github.com/epsilonion-liam/UK-Grid-Tracker" target="_blank" rel="noopener noreferrer">public
+    GitHub repository</a> and are, in turn, derived from Elexon Insights Solution and NESO open data. Each source
+    retains its own licence terms — Elexon's licence requires the attribution shown in this dashboard's footer, and
+    NESO's Carbon Intensity API and Data Portal are published as open data — check each source directly for full
+    terms before reuse. See the repository for the licence terms that apply to this project's own code.</p>
+
+  <h2 id="acceptable-use">Acceptable use</h2>
+  <p>You agree not to use this dashboard in any way that could damage, disable, overburden, or impair it (for
+    example, automated scraping at a rate that degrades service for other users — please fetch the underlying
+    JSON files from GitHub directly for bulk/automated use instead), or to misrepresent the figures shown as being
+    more precise, complete, or officially endorsed than the caveats on this page describe.</p>
+
+  <h2 id="responsible-use">Responsible use &amp; how to reference this dashboard</h2>
+  <p>This dashboard is an analytical layer built on public data, not an official statistical product in its own
+    right. When using figures derived from this dashboard in reporting, analysis, or commentary, please reference
+    the underlying official sources alongside UK Politics Decoded's processing, so readers understand:</p>
+  <ul>
+    <li>Elexon and NESO are the authoritative, original data providers;</li>
+    <li>UK Politics Decoded performs independent processing, aggregation, and analysis on top of that data;</li>
+    <li>this dashboard is not an official statistical product, and figures should be verified against the original
+      sources before being relied on for any significant decision.</li>
+  </ul>
+  <p>Appropriate wording for citing this dashboard includes, for example:</p>
+  <ul>
+    <li>"According to UK Politics Decoded's analysis of Elexon and NESO grid telemetry…"</li>
+    <li>"Based on UK Politics Decoded's processing of NESO embedded generation data…"</li>
+    <li>"UK Politics Decoded's GB National Grid Live dashboard shows that…"</li>
+  </ul>
+  <p>When referencing a specific figure, please also link back to this dashboard
+    (<a href="http://nationalgrid.ukpoliticsdecoded.uk/">nationalgrid.ukpoliticsdecoded.uk</a>) so readers can check
+    the same caveats that applied when the figure was produced. Please do not present figures from this dashboard
+    as official Elexon or NESO statistics.</p>
+
+  <h2 id="changes">Changes to these terms</h2>
+  <p>These terms may be updated from time to time; continued use of this dashboard after changes are published
+    constitutes acceptance of the updated terms.</p>
+
+  <h2 id="contact">Contact</h2>
+  <p>Questions about these terms can be directed via <a href="https://ukpoliticsdecoded.uk/">UK Politics
+    Decoded</a>.</p>
+
+  <footer>
+    <p><a href="index.html">← Back to the dashboard</a> · <a href="privacy.html">Privacy Policy</a></p>
+    <p>Copyright 2026 UK Politics Decoded. All rights reserved.</p>
+  </footer>
+</main>
+</body>
+</html>

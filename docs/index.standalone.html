@@ -1,9 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GB Grid Telemetry</title>
+<title>GB National Grid Live: Real-Time Electricity &amp; Carbon Data | UK Politics Decoded</title>
+<meta name="description" content="Live tracker for Great Britain's electricity grid — generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions. A free resource from UK Politics Decoded.">
+<meta name="author" content="UK Politics Decoded">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="http://nationalgrid.ukpoliticsdecoded.uk/">
+<link rel="icon" href="https://ukpoliticsdecoded.uk/assets/images/logo.webp" type="image/webp">
+
+<!-- Open Graph / social previews -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="UK Politics Decoded">
+<meta property="og:title" content="GB National Grid Live: Real-Time Electricity &amp; Carbon Data">
+<meta property="og:description" content="Live tracker for Great Britain's electricity grid — generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions.">
+<meta property="og:url" content="http://nationalgrid.ukpoliticsdecoded.uk/">
+<meta property="og:locale" content="en_GB">
+<meta property="og:image" content="https://ukpoliticsdecoded.uk/assets/images/logo.webp">
+<meta property="og:image:type" content="image/webp">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GB National Grid Live: Real-Time Electricity &amp; Carbon Data">
+<meta name="twitter:description" content="Live tracker for Great Britain's electricity grid — generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions.">
+<meta name="twitter:image" content="https://ukpoliticsdecoded.uk/assets/images/logo.webp">
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css">
 <style>
   :root {
@@ -666,6 +688,37 @@
     color: var(--text);
   }
 </style>
+
+<!-- Structured data: ties this tool to UK Politics Decoded as publisher/creator for E-E-A-T -->
+<script type="application/ld+json" id="ld-webapp">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "GB National Grid Live",
+  "alternateName": "GB Grid Telemetry",
+  "url": "http://nationalgrid.ukpoliticsdecoded.uk/",
+  "description": "Live dashboard tracking Great Britain's national electricity grid: generation mix, carbon intensity, wholesale price, system frequency, interconnector flows, and regional carbon intensity across all 14 GB DNO regions.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "isAccessibleForFree": true,
+  "inLanguage": "en-GB",
+  "about": { "@type": "Thing", "name": "Great Britain electricity grid" },
+  "publisher": { "@type": "Organization", "name": "UK Politics Decoded", "url": "https://ukpoliticsdecoded.uk/", "logo": "https://ukpoliticsdecoded.uk/assets/images/logo.webp" },
+  "creator": { "@type": "Organization", "name": "UK Politics Decoded", "url": "https://ukpoliticsdecoded.uk/", "logo": "https://ukpoliticsdecoded.uk/assets/images/logo.webp" },
+  "isPartOf": { "@type": "WebSite", "name": "UK Politics Decoded", "url": "https://ukpoliticsdecoded.uk/" }
+}
+</script>
+<script type="application/ld+json" id="ld-breadcrumb">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "UK Politics Decoded", "item": "https://ukpoliticsdecoded.uk/" },
+    { "@type": "ListItem", "position": 2, "name": "GB National Grid Live", "item": "http://nationalgrid.ukpoliticsdecoded.uk/" }
+  ]
+}
+</script>
 </head>
 <body>
 <div id="app">
@@ -677,7 +730,7 @@
         <img src="https://ukpoliticsdecoded.uk/assets/images/logo.webp" alt="">
         UK Politics Decoded
       </a>
-      <a class="header-link-btn" href="https://github.com/epsilonion-liam/UK-Grid-Tracker" target="_blank" rel="noopener noreferrer">
+      <a class="header-link-btn" href="https://github.com/UKPoliticsDecoded/UK-Grid-Tracker" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
         Data Source (GitHub)
       </a>
@@ -801,6 +854,17 @@
   </section>
 
   <footer>
+    <br>
+    <nav class="footer-links">
+      <a href="terms.html">Terms of Service</a>
+      <span aria-hidden="true">&middot;</span>
+      <a href="privacy.html">Privacy Policy</a>
+      <span aria-hidden="true">&middot;</span>
+      <a href="https://ukpoliticsdecoded.uk/" target="_blank" rel="noopener">UK Politics Decoded</a>
+      <span aria-hidden="true">&middot;</span>
+      <a href="https://github.com/UKPoliticsDecoded/UK-Grid-Tracker" target="_blank" rel="noopener">GitHub data repo</a>
+    </nav>
+    <br>
     <p>Data refreshed from static exports in <code>/data</code>. Values shown are unrounded source readings.</p>
     <p>
       The data comes from the <a href="https://bmrs.elexon.co.uk/" target="_blank" rel="noopener noreferrer">Elexon Insights Solution</a>,
@@ -810,6 +874,9 @@
       <a href="https://www.elexon.co.uk/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/" target="_blank" rel="noopener noreferrer">Elexon&rsquo;s licence</a>
       requires the following statement: Contains BMRS data &copy; Elexon Limited copyright and database right 2026.
     </p>
+    <br>
+    <p>Copyright 2026 UK Politics Decoded. All rights reserved.</p>
+    <p>This website is not affiliated with the UK government or any other official body.</p>
   </footer>
 </div>
 
@@ -828,10 +895,7 @@
 (() => {
   "use strict";
 
-  // ------------------------------------------------------------------
-  // Configuration
-  // ------------------------------------------------------------------
-  const DATA_DIR = "data";
+  const DATA_DIR = "https://raw.githubusercontent.com/epsilonion-liam/UK-Grid-Tracker/main/docs/data";
 
   const TABS = [
     { key: "day",           label: "Today" },
@@ -1088,6 +1152,21 @@
     setGwMetric("metric-generation", snapshot.total_generation_mw);
     setGwMetric("metric-transfers", snapshot.total_net_transfer_mw);
     setRawMetric("metric-frequency", snapshot.system_frequency, "Hz");
+    updateStructuredDataFreshness(latestTimestamp);
+  }
+
+  // Keeps the WebApplication JSON-LD's dateModified in step with the latest
+  // loaded data point, as a freshness signal for search engines.
+  function updateStructuredDataFreshness(latestTimestamp) {
+    const script = document.getElementById("ld-webapp");
+    if (!script || !latestTimestamp) return;
+    try {
+      const data = JSON.parse(script.textContent);
+      data.dateModified = new Date(latestTimestamp).toISOString();
+      script.textContent = JSON.stringify(data);
+    } catch (err) {
+      console.error("Failed to update structured data freshness", err);
+    }
   }
 
   // Source timestamps are UTC; render in UK local time (auto GMT/BST).

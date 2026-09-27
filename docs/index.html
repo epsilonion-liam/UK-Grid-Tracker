@@ -1128,11 +1128,24 @@
   }
 
   /** Build a {columnName: latestValue} snapshot from a parsed timeline payload. */
+  /** Build a {columnName: value} snapshot from the single most recent row,
+   *  the SAME row for every column - deliberately not an independent
+   *  "last non-null" search per column. Mixing values pulled from different
+   *  timestamps produces internally-inconsistent readouts (e.g. "100%
+   *  zero-carbon" alongside a nonzero fossil-fuel figure from an earlier,
+   *  different period) whenever different upstream fields go null on
+   *  different rows - which happens often, since Elexon publishes ~18 fuel
+   *  readings per settlement period and they don't all land at once. Fields
+   *  genuinely missing for the latest period render as "--" (handled by each
+   *  metric's own null-check) rather than silently substituting a stale
+   *  value from a different point in time. */
   function buildSnapshot(cols) {
     const snapshot = {};
+    const lastIdx = cols.__rowCount - 1;
     for (const key of Object.keys(cols)) {
       if (key === "__rowCount") continue;
-      snapshot[key] = lastNonNull(cols[key]);
+      const value = cols[key][lastIdx];
+      snapshot[key] = (value === null || value === undefined) ? null : value;
     }
     return snapshot;
   }

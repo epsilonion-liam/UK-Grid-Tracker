@@ -171,6 +171,38 @@
   #metric-transfers .value { color: var(--c-imports); }
   #metric-time .value { color: var(--accent); }
 
+  /* Page-level tabs (Overview vs Carbon & Fuel Mix System) */
+  nav.page-nav {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px 0;
+    background: var(--bg-1);
+  }
+
+  nav.page-nav button {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    color: var(--text-dim);
+    padding: 8px 16px;
+    border-radius: 6px 6px 0 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  nav.page-nav button:hover { color: var(--text); }
+
+  nav.page-nav button.active {
+    background: var(--bg-2);
+    color: var(--accent);
+    border-color: var(--border);
+  }
+
+  .app-page { display: none; }
+  .app-page.active { display: block; }
+
   /* Nav bar */
   nav.history-nav {
     display: flex;
@@ -331,6 +363,57 @@
     color: var(--text-dim);
     margin-top: 4px;
     text-transform: capitalize;
+  }
+
+  /* Regional 24h dominant-fuel heatmap strip */
+  .region-history {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .region-history-row {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .region-history-row .name {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .region-history-cells {
+    display: flex;
+    gap: 1px;
+    min-width: 480px;
+  }
+
+  .region-history-cells .cell {
+    flex: 1 1 auto;
+    height: 20px;
+    border-radius: 2px;
+    cursor: default;
+  }
+
+  .region-history-axis {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .region-history-axis .labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5px;
+    color: var(--text-dim);
+    min-width: 480px;
   }
 
   footer {
@@ -767,91 +850,128 @@
     </div>
   </header>
 
+  <nav class="page-nav" id="pageNav">
+    <button data-page="overview" class="active">Overview</button>
+    <button data-page="fuelmix">Carbon &amp; Fuel Mix System</button>
+  </nav>
+
   <nav class="history-nav" id="historyNav">
     <span class="nav-status" id="navStatus"></span>
   </nav>
 
-  <main class="viewport">
-    <div class="chart-panel">
-      <div class="panel-title">
-        <span>National Generation Mix &amp; Carbon Intensity <button class="info-icon" data-info-key="upperChart" aria-label="About this section">i</button></span>
-        <span id="upperRange"></span>
+  <div class="app-page active" id="page-overview">
+    <main class="viewport">
+      <div class="chart-panel">
+        <div class="panel-title">
+          <span>System Balancing Volume &amp; Frequency <button class="info-icon" data-info-key="lowerChart" aria-label="About this section">i</button></span>
+          <span id="lowerRange"></span>
+        </div>
+        <div class="chart-holder" id="lowerChart"></div>
       </div>
-      <div class="chart-holder" id="upperChart"></div>
-    </div>
+    </main>
 
-    <div class="chart-panel">
-      <div class="panel-title">
-        <span>System Balancing Volume &amp; Frequency <button class="info-icon" data-info-key="lowerChart" aria-label="About this section">i</button></span>
-        <span id="lowerRange"></span>
-      </div>
-      <div class="chart-holder" id="lowerChart"></div>
-    </div>
-  </main>
-
-  <section class="summary">
-    <div class="summary-cards">
-      <div class="summary-card" id="decarbCard">
-        <h3>Grid Decarbonisation <button class="info-icon" data-info-key="decarbCard" aria-label="About this section">i</button></h3>
-        <div class="decarb-body">
-          <div class="gauge-wrap">
-            <svg class="gauge-svg" viewBox="0 0 120 120">
-              <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
-              <circle class="gauge-progress" id="decarbGaugeProgress" cx="60" cy="60" r="50"></circle>
-            </svg>
-            <div class="gauge-label">
-              <span class="pct" id="decarbPct">--%</span>
-              <span class="caption">Zero-Carbon</span>
+    <section class="summary">
+      <div class="summary-cards">
+        <div class="summary-card" id="decarbCard">
+          <h3>Grid Decarbonisation <button class="info-icon" data-info-key="decarbCard" aria-label="About this section">i</button></h3>
+          <div class="decarb-body">
+            <div class="gauge-wrap">
+              <svg class="gauge-svg" viewBox="0 0 120 120">
+                <circle class="gauge-track" cx="60" cy="60" r="50"></circle>
+                <circle class="gauge-progress" id="decarbGaugeProgress" cx="60" cy="60" r="50"></circle>
+              </svg>
+              <div class="gauge-label">
+                <span class="pct" id="decarbPct">--%</span>
+                <span class="caption">Zero-Carbon</span>
+              </div>
+            </div>
+            <div class="decarb-submetrics">
+              <div class="submetric-row low-carbon">
+                <span class="name">Low-Carbon Output</span>
+                <span class="val" id="metric-lowcarbon">--</span>
+              </div>
+              <div class="submetric-row fossil">
+                <span class="name">Fossil Fuel Output</span>
+                <span class="val" id="metric-fossil">--</span>
+              </div>
             </div>
           </div>
-          <div class="decarb-submetrics">
-            <div class="submetric-row low-carbon">
-              <span class="name">Low-Carbon Output</span>
-              <span class="val" id="metric-lowcarbon">--</span>
+          <div class="sparkline-holder" id="forecastSparkline"></div>
+        </div>
+
+        <div class="summary-card" id="opsCard">
+          <h3>Grid Operations <button class="info-icon" data-info-key="opsCard" aria-label="About this section">i</button></h3>
+          <div class="ops-body">
+            <div class="freq-display">
+              <span class="freq-value" id="opsFrequency">--</span>
+              <span class="freq-delta flat" id="opsFreqDelta">--</span>
             </div>
-            <div class="submetric-row fossil">
-              <span class="name">Fossil Fuel Output</span>
-              <span class="val" id="metric-fossil">--</span>
-            </div>
+            <span class="net-transfer-badge" id="netTransferBadge">
+              <span class="label">Net Transfer</span>
+              <span id="netTransferValue">--</span>
+            </span>
           </div>
         </div>
-        <div class="sparkline-holder" id="forecastSparkline"></div>
       </div>
+    </section>
 
-      <div class="summary-card" id="opsCard">
-        <h3>Grid Operations <button class="info-icon" data-info-key="opsCard" aria-label="About this section">i</button></h3>
-        <div class="ops-body">
-          <div class="freq-display">
-            <span class="freq-value" id="opsFrequency">--</span>
-            <span class="freq-delta flat" id="opsFreqDelta">--</span>
-          </div>
-          <span class="net-transfer-badge" id="netTransferBadge">
-            <span class="label">Net Transfer</span>
-            <span id="netTransferValue">--</span>
-          </span>
+    <section class="detail">
+      <h2>Fuel &amp; Transfer Breakdown <button class="info-icon" data-info-key="detailGrid" aria-label="About this section">i</button></h2>
+      <div class="detail-grid" id="detailGrid"></div>
+    </section>
+
+    <section class="regional">
+      <h2>
+        Regional Carbon Intensity — 14 DNO Regions (live) <button class="info-icon" data-info-key="regionGrid" aria-label="About this section">i</button>
+        <span class="legend-swatches">
+          <span><i style="background:var(--very-low)"></i>very low</span>
+          <span><i style="background:var(--low)"></i>low</span>
+          <span><i style="background:var(--moderate)"></i>moderate</span>
+          <span><i style="background:var(--high)"></i>high</span>
+          <span><i style="background:var(--very-high)"></i>very high</span>
+        </span>
+      </h2>
+      <div class="region-grid" id="regionGrid"></div>
+    </section>
+  </div>
+
+  <div class="app-page" id="page-fuelmix">
+    <main class="viewport">
+      <div class="chart-panel">
+        <div class="panel-title">
+          <span>National Generation Mix &amp; Carbon Intensity <button class="info-icon" data-info-key="upperChart" aria-label="About this section">i</button></span>
+          <span id="upperRange"></span>
         </div>
+        <div class="chart-holder" id="upperChart"></div>
       </div>
-    </div>
-  </section>
 
-  <section class="detail">
-    <h2>Fuel &amp; Transfer Breakdown <button class="info-icon" data-info-key="detailGrid" aria-label="About this section">i</button></h2>
-    <div class="detail-grid" id="detailGrid"></div>
-  </section>
+      <div class="chart-panel">
+        <div class="panel-title">
+          <span>Wholesale Electricity Price <button class="info-icon" data-info-key="priceChart" aria-label="About this section">i</button></span>
+          <span id="priceRange"></span>
+        </div>
+        <div class="chart-holder" id="priceChart"></div>
+      </div>
+    </main>
 
-  <section class="regional">
-    <h2>
-      Regional Carbon Intensity — 14 DNO Regions <button class="info-icon" data-info-key="regionGrid" aria-label="About this section">i</button>
-      <span class="legend-swatches">
-        <span><i style="background:var(--very-low)"></i>very low</span>
-        <span><i style="background:var(--low)"></i>low</span>
-        <span><i style="background:var(--moderate)"></i>moderate</span>
-        <span><i style="background:var(--high)"></i>high</span>
-        <span><i style="background:var(--very-high)"></i>very high</span>
-      </span>
-    </h2>
-    <div class="region-grid" id="regionGrid"></div>
-  </section>
+    <section class="regional">
+      <h2>
+        Dominant Fuel per DNO Region — Last 24h <button class="info-icon" data-info-key="regionHistory" aria-label="About this section">i</button>
+        <span class="legend-swatches">
+          <span><i style="background:var(--very-low)"></i>very low</span>
+          <span><i style="background:var(--low)"></i>low</span>
+          <span><i style="background:var(--moderate)"></i>moderate</span>
+          <span><i style="background:var(--high)"></i>high</span>
+          <span><i style="background:var(--very-high)"></i>very high</span>
+        </span>
+      </h2>
+      <div class="region-history" id="regionHistory"></div>
+      <div class="region-history-axis">
+        <span></span>
+        <span class="labels" id="regionHistoryAxis"></span>
+      </div>
+    </section>
+  </div>
 
   <footer>
     <br>
@@ -1102,10 +1222,45 @@
   const upperChart = buildUpperChart(upperContainer);
   const lowerChart = buildLowerChart(lowerContainer);
 
-  new ResizeObserver(() => {
-    upperChart.setSize({ width: upperContainer.clientWidth, height: UPPER_CHART_HEIGHT });
-    lowerChart.setSize({ width: lowerContainer.clientWidth, height: LOWER_CHART_HEIGHT });
-  }).observe(document.querySelector("main.viewport"));
+  document.querySelectorAll("main.viewport").forEach(el => {
+    new ResizeObserver(() => {
+      upperChart.setSize({ width: upperContainer.clientWidth, height: UPPER_CHART_HEIGHT });
+      lowerChart.setSize({ width: lowerContainer.clientWidth, height: LOWER_CHART_HEIGHT });
+      if (priceChart) priceChart.setSize({ width: priceContainer.clientWidth, height: PRICE_CHART_HEIGHT });
+    }).observe(el);
+  });
+
+  // Wholesale price chart (£/MWh), half-hourly - Market Index Data.
+  const PRICE_CHART_HEIGHT = 220;
+
+  function buildPriceChart(container) {
+    const opts = {
+      width: container.clientWidth,
+      height: PRICE_CHART_HEIGHT,
+      cursor: { sync: { key: SYNC_KEY } },
+      scales: { x: { time: true }, price: { auto: true } },
+      axes: [
+        { stroke: "#7c8794", grid: { stroke: "#20293380" } },
+        { scale: "price", stroke: "#7c8794", grid: { stroke: "#20293380" }, label: "£/MWh" },
+      ],
+      series: [
+        { label: "Time" },
+        {
+          label: "Wholesale Price (£/MWh)",
+          scale: "price",
+          stroke: "#f2c94c",
+          width: 1.5,
+          fill: "rgba(242,201,76,0.12)",
+          points: { show: false },
+          value: exactValueFormatter,
+        },
+      ],
+    };
+    return new uPlot(opts, [[0], [0]], container);
+  }
+
+  const priceContainer = document.getElementById("priceChart");
+  const priceChart = buildPriceChart(priceContainer);
 
   // 48h carbon intensity forecast sparkline (Decarbonisation card). Legend is
   // enabled (for exact-value hover tooltips) but repositioned via CSS as a
@@ -1364,6 +1519,11 @@
         toSeriesArray(cols.system_frequency),
       ]);
 
+      priceChart.setData([
+        x,
+        toSeriesArray(cols.wholesale_price_gbp_mwh),
+      ]);
+
       const snapshot = buildSnapshot(cols);
       updateBanner(snapshot, cols.timestamp[cols.timestamp.length - 1]);
       renderDetailTable(snapshot);
@@ -1374,6 +1534,7 @@
       const last = cols.timestamp[cols.timestamp.length - 1];
       document.getElementById("upperRange").textContent = `${first} \u2192 ${last}`;
       document.getElementById("lowerRange").textContent = `${cols.__rowCount} points`;
+      document.getElementById("priceRange").textContent = `${first} \u2192 ${last}`;
       setNavStatus(`${cols.__rowCount} points loaded`);
     } catch (err) {
       console.error("Failed to load timeline", tabKey, err);
@@ -1457,6 +1618,110 @@
   }
 
   // ------------------------------------------------------------------
+  // Page-level tabs (Overview vs Carbon & Fuel Mix System)
+  // ------------------------------------------------------------------
+  function setupPageNav() {
+    document.querySelectorAll("#pageNav button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const page = btn.dataset.page;
+        document.querySelectorAll("#pageNav button").forEach(b => b.classList.toggle("active", b === btn));
+        document.querySelectorAll(".app-page").forEach(el => {
+          el.classList.toggle("active", el.id === `page-${page}`);
+        });
+        // uPlot canvases in a previously display:none page report clientWidth=0,
+        // so force a resize pass once the page becomes visible again.
+        requestAnimationFrame(() => {
+          upperChart.setSize({ width: upperContainer.clientWidth, height: UPPER_CHART_HEIGHT });
+          lowerChart.setSize({ width: lowerContainer.clientWidth, height: LOWER_CHART_HEIGHT });
+          priceChart.setSize({ width: priceContainer.clientWidth, height: PRICE_CHART_HEIGHT });
+        });
+      });
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // Regional 24h dominant-fuel heatmap ("Carbon & Fuel Mix System" page)
+  // ------------------------------------------------------------------
+  const LONDON_TIME_SHORT_FMT = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London", hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+
+  async function loadRegionalHistory() {
+    const holder = document.getElementById("regionHistory");
+    const axis = document.getElementById("regionHistoryAxis");
+    try {
+      const res = await fetch(`${DATA_DIR}/regional_day.json?v=${Date.now()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = await res.json();
+      const cols = toColumns(payload);
+
+      if (!cols.__rowCount) {
+        holder.innerHTML = `<div style="color:var(--text-dim)">No regional history available yet.</div>`;
+        return;
+      }
+
+      // Group rows by region, preserving chronological order within each region.
+      const byRegion = new Map();
+      for (let i = 0; i < cols.__rowCount; i++) {
+        const key = cols.region_id[i];
+        if (!byRegion.has(key)) byRegion.set(key, { name: cols.dno_region[i], periods: [] });
+        byRegion.get(key).periods.push({
+          timestamp: cols.timestamp[i],
+          intensity: cols.carbon_intensity[i],
+          index: cols.index_level[i],
+          fuel: cols.top_fuel[i],
+        });
+      }
+
+      holder.innerHTML = "";
+      const regionIds = [...byRegion.keys()].sort((a, b) => a - b);
+      let axisSource = null;
+
+      regionIds.forEach(regionId => {
+        const region = byRegion.get(regionId);
+        if (!axisSource || region.periods.length > axisSource.length) axisSource = region.periods;
+
+        const row = document.createElement("div");
+        row.className = "region-history-row";
+
+        const nameEl = document.createElement("span");
+        nameEl.className = "name";
+        nameEl.textContent = region.name || `Region ${regionId}`;
+        row.appendChild(nameEl);
+
+        const cellsEl = document.createElement("div");
+        cellsEl.className = "region-history-cells";
+        region.periods.forEach(period => {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.style.background = INDEX_COLORS[period.index] || "var(--bg-3)";
+          const hhmm = LONDON_TIME_SHORT_FMT.format(new Date(period.timestamp));
+          const intensityText = (period.intensity === null || period.intensity === undefined) ? "--" : period.intensity;
+          cell.title = `${hhmm} \u2014 ${period.fuel || "--"}, ${intensityText} gCO2/kWh (${period.index || "--"})`;
+          cellsEl.appendChild(cell);
+        });
+        row.appendChild(cellsEl);
+
+        holder.appendChild(row);
+      });
+
+      // Sparse time-axis labels (every 4 hours) under the last row, matching
+      // the number of half-hour cells rendered.
+      axis.innerHTML = "";
+      if (axisSource) {
+        axisSource.forEach((period, i) => {
+          const label = document.createElement("span");
+          if (i % 8 === 0) label.textContent = LONDON_TIME_SHORT_FMT.format(new Date(period.timestamp));
+          axis.appendChild(label);
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load regional history", err);
+      holder.innerHTML = `<div style="color:var(--text-dim)">Regional history failed to load (${err.message})</div>`;
+    }
+  }
+
+  // ------------------------------------------------------------------
   // Info modal (section header explainers)
   // ------------------------------------------------------------------
   const INFO_CONTENT = {
@@ -1491,7 +1756,22 @@
     },
     regionGrid: {
       title: "Regional Carbon Intensity — 14 DNO Regions",
-      body: "Shows the current carbon intensity and dominant fuel source for each of the 14 GB Distribution Network Operator (DNO) regions.",
+      body: "Shows the current carbon intensity and dominant fuel source for each of the 14 GB Distribution Network Operator (DNO) regions. " +
+        "\"Imports\" as a dominant fuel means that region is drawing most of its electricity from a neighbouring DNO region rather than generating it locally " +
+        "(e.g. the North East often imports from Scotland, which frequently sits near 0 gCO2/kWh thanks to wind and hydro).",
+    },
+    priceChart: {
+      title: "Wholesale Electricity Price",
+      body: "The GB day-ahead/within-day wholesale price (£/MWh), volume-weighted across reporting exchanges from Elexon's Market Index Data (MID). " +
+        "This is a single system-wide marginal price for each half-hour settlement period — every generator accepted in that period is paid the same price " +
+        "regardless of technology (wind, gas, nuclear, etc. all clear at the same rate). The API's do not publish a separate price per fuel type for the wholesale market, " +
+        "because that is not how marginal pricing works: it is one clearing price for everyone, set by the most expensive generator needed to meet demand in that period.",
+    },
+    regionHistory: {
+      title: "Dominant Fuel per DNO Region — Last 24h",
+      body: "Each row is one of the 14 GB DNO regions; each cell is one half-hour settlement period over the last 24 hours, coloured by that region's carbon " +
+        "intensity index. Hover a cell to see the exact time, dominant fuel source, and gCO2/kWh reading for that period. This lets you see how quickly the " +
+        "generation mix — and therefore emissions — can change locally within a single day, which the live snapshot above cannot show.",
     },
   };
 
@@ -1532,12 +1812,15 @@
   // Init
   // ------------------------------------------------------------------
   buildNav();
+  setupPageNav();
   loadTimeline(activeTabKey);
   loadRegional();
+  loadRegionalHistory();
   loadCarbonForecast();
   setupInfoModal();
   restartAutoRefresh();
   setInterval(loadRegional, AUTO_REFRESH_MS);
+  setInterval(loadRegionalHistory, AUTO_REFRESH_MS);
   setInterval(loadCarbonForecast, AUTO_REFRESH_MS);
 })();
 </script>

@@ -1128,26 +1128,45 @@
   }
 
   /** Build a {columnName: latestValue} snapshot from a parsed timeline payload. */
-  /** Build a {columnName: value} snapshot from the single most recent row,
-   *  the SAME row for every column - deliberately not an independent
-   *  "last non-null" search per column. Mixing values pulled from different
-   *  timestamps produces internally-inconsistent readouts (e.g. "100%
-   *  zero-carbon" alongside a nonzero fossil-fuel figure from an earlier,
-   *  different period) whenever different upstream fields go null on
-   *  different rows - which happens often, since Elexon publishes ~18 fuel
-   *  readings per settlement period and they don't all land at once. Fields
-   *  genuinely missing for the latest period render as "--" (handled by each
-   *  metric's own null-check) rather than silently substituting a stale
-   *  value from a different point in time. */
+  // Fields whose completeness we require before treating a row as "the
+  // current snapshot" for the summary banner/cards - i.e. the aggregates the
+  // backend only ever populates once Elexon's FUELINST batch has fully landed
+  // for that settlement period (see fetch_grid.py's fuelinst_complete guard).
+  // The most recent settlement period is null here for roughly the first
+  // 5-15 minutes of every half hour until Elexon catches up - using it
+  // directly would flash the whole banner to "--" on a very routine, expected
+  // schedule rather than showing the still-fully-valid previous period.
+  const SNAPSHOT_COMPLETENESS_FIELD = "total_generation_mw";
+
+  /** Build a {columnName: value} snapshot from a single consistent row - the
+   *  most recent row where SNAPSHOT_COMPLETENESS_FIELD is present, falling
+   *  back to the very last row if none qualify (e.g. a brand new/near-empty
+   *  dataset). Deliberately NOT an independent "last non-null" search per
+   *  column: mixing values pulled from different timestamps produces
+   *  internally-inconsistent readouts (e.g. "100% zero-carbon" alongside a
+   *  nonzero fossil-fuel figure from an earlier, different period) whenever
+   *  different upstream fields go null on different rows - which happens
+   *  often, since Elexon publishes ~18 fuel readings per settlement period
+   *  and they don't all land at once. Any field still missing on the chosen
+   *  row renders as "--" (handled by each metric's own null-check) rather
+   *  than silently substituting a stale value from a different point in
+   *  time. */
   function buildSnapshot(cols) {
+    const completeness = cols[SNAPSHOT_COMPLETENESS_FIELD] || [];
+    let idx = cols.__rowCount - 1;
+    for (let i = idx; i >= 0; i--) {
+      if (completeness[i] !== null && completeness[i] !== undefined) {
+        idx = i;
+        break;
+      }
+    }
     const snapshot = {};
-    const lastIdx = cols.__rowCount - 1;
     for (const key of Object.keys(cols)) {
       if (key === "__rowCount") continue;
-      const value = cols[key][lastIdx];
+      const value = cols[key][idx];
       snapshot[key] = (value === null || value === undefined) ? null : value;
     }
-    return snapshot;
+    return { snapshot, timestamp: cols.timestamp[idx] };
   }
 
   /** Sum a snapshot's named columns; returns null if none of them have a value. */
@@ -1537,8 +1556,8 @@
         toSeriesArray(cols.wholesale_price_gbp_mwh),
       ]);
 
-      const snapshot = buildSnapshot(cols);
-      updateBanner(snapshot, cols.timestamp[cols.timestamp.length - 1]);
+      const { snapshot, timestamp: snapshotTimestamp } = buildSnapshot(cols);
+      updateBanner(snapshot, snapshotTimestamp);
       renderDetailTable(snapshot);
       updateDecarbCard(snapshot);
       updateOperationsCard(snapshot);

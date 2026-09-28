@@ -858,6 +858,7 @@
         <strong>Data source delayed.</strong>
         <span id="outageBannerText">Some figures below are from the last available reading rather than live data.</span>
         <span class="detail" id="outageBannerDetail"></span>
+        <button class="info-icon" data-info-key="outageBanner" aria-label="About this warning">i</button>
       </span>
     </div>
     <div class="metrics-bar" id="summaryBanner">
@@ -1883,6 +1884,22 @@
       body: "Each row is one of the 14 GB DNO regions, each cell is one half hour settlement period over the last 24 hours, coloured by that region's carbon " +
         "intensity index. Hover a cell to see the exact time, dominant fuel source, and gCO2/kWh reading for that period. This lets you see how quickly the " +
         "generation mix and therefore emissions can change locally within a single day, which the live snapshot above cannot show.",
+    },
+    outageBanner: {
+      title: "Data Source Delayed",
+      body: "This dashboard combines three independent upstream feeds: Elexon's <code>FUELINST</code> (per fuel type MW), Elexon's Market Index Data (wholesale price), " +
+        "and the Carbon Intensity API (carbon intensity + a fast fuel mix estimate). They don't always update in lockstep &mdash; <code>FUELINST</code> in particular " +
+        "publishes roughly 18 separate fuel type/interconnector readings every settlement period, and every so often one of these feeds stalls upstream for an " +
+        "extended period (an outage on the data provider's side, not this site)." +
+        "<br><br><strong>Why not just show whatever is available?</strong> Early on this dashboard did exactly that, and it produced misleading numbers &mdash; e.g. " +
+        "\"100% zero carbon\" shown next to a nonzero fossil fuel figure, because the two came from different, partially updated settlement periods. " +
+        "So there's now a guard: generation, demand and decarbonisation totals are only computed once <em>every</em> expected <code>FUELINST</code> reading for a " +
+        "settlement period has arrived, and the summary banner/cards always show one single, internally consistent settlement period rather than mixing the " +
+        "freshest available value for each field independently." +
+        "<br><br><strong>What this banner means for you:</strong> the guard has fallen back to the most recent settlement period that was fully complete, rather " +
+        "than a newer but partial one. The figures shown are genuinely correct for that period, just not the very latest possible moment &mdash; and charts may " +
+        "show a gap at the leading edge until the delayed feed catches up. Everything self-corrects automatically on the next update once the upstream feed " +
+        "resumes publishing; no action is needed here.",
     },
   };
 

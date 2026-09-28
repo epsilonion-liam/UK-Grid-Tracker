@@ -906,7 +906,7 @@
     <main class="viewport">
       <div class="chart-panel">
         <div class="panel-title">
-          <span>System Balancing Volume &amp; Frequency <button class="info-icon" data-info-key="lowerChart" aria-label="About this section">i</button></span>
+          <span>System Balancing Volume &amp; Frequency (LIVE)<button class="info-icon" data-info-key="lowerChart" aria-label="About this section">i</button></span>
           <span id="lowerRange"></span>
         </div>
         <div class="chart-holder" id="lowerChart"></div>
@@ -959,13 +959,13 @@
     </section>
 
     <section class="detail">
-      <h2>Fuel &amp; Transfer Breakdown <button class="info-icon" data-info-key="detailGrid" aria-label="About this section">i</button></h2>
+      <h2>Fuel &amp; Transfer Breakdown (LIVE)<button class="info-icon" data-info-key="detailGrid" aria-label="About this section">i</button></h2>
       <div class="detail-grid" id="detailGrid"></div>
     </section>
 
     <section class="regional">
       <h2>
-        Regional Carbon Intensity - 14 DNO Regions (live) <button class="info-icon" data-info-key="regionGrid" aria-label="About this section">i</button>
+        Regional Carbon Intensity - 14 DNO Regions (LIVE) <button class="info-icon" data-info-key="regionGrid" aria-label="About this section">i</button>
         <span class="legend-swatches">
           <span><i style="background:var(--very-low)"></i>very low</span>
           <span><i style="background:var(--low)"></i>low</span>
@@ -982,7 +982,7 @@
     <main class="viewport">
       <div class="chart-panel">
         <div class="panel-title">
-          <span>National Generation Mix &amp; Carbon Intensity <button class="info-icon" data-info-key="upperChart" aria-label="About this section">i</button></span>
+          <span>National Generation Mix &amp; Carbon Intensity (LIVE)<button class="info-icon" data-info-key="upperChart" aria-label="About this section">i</button></span>
           <span id="upperRange"></span>
         </div>
         <div class="chart-holder" id="upperChart"></div>
@@ -990,7 +990,7 @@
 
       <div class="chart-panel">
         <div class="panel-title">
-          <span>Wholesale Electricity Price <button class="info-icon" data-info-key="priceChart" aria-label="About this section">i</button></span>
+          <span>Wholesale Electricity Price (LIVE)<button class="info-icon" data-info-key="priceChart" aria-label="About this section">i</button></span>
           <span id="priceRange"></span>
         </div>
         <div class="chart-holder" id="priceChart"></div>
@@ -999,7 +999,7 @@
 
     <section class="regional">
       <h2>
-        Dominant Fuel per DNO Region - Last 24h <button class="info-icon" data-info-key="regionHistory" aria-label="About this section">i</button>
+        Dominant Fuel per DNO Region - Last 24h (LIVE)<button class="info-icon" data-info-key="regionHistory" aria-label="About this section">i</button>
         <span class="legend-swatches">
           <span><i style="background:var(--very-low)"></i>very low</span>
           <span><i style="background:var(--low)"></i>low</span>
@@ -1888,16 +1888,16 @@
     outageBanner: {
       title: "Data Source Delayed",
       body: "This dashboard combines three independent upstream feeds: Elexon's <code>FUELINST</code> (per fuel type MW), Elexon's Market Index Data (wholesale price), " +
-        "and the Carbon Intensity API (carbon intensity + a fast fuel mix estimate). They don't always update in lockstep &mdash; <code>FUELINST</code> in particular " +
+        "and the Carbon Intensity API (carbon intensity + a fast fuel mix estimate). They don't always update in lockstep <code>FUELINST</code> in particular " +
         "publishes roughly 18 separate fuel type/interconnector readings every settlement period, and every so often one of these feeds stalls upstream for an " +
         "extended period (an outage on the data provider's side, not this site)." +
-        "<br><br><strong>Why not just show whatever is available?</strong> Early on this dashboard did exactly that, and it produced misleading numbers &mdash; e.g. " +
+        "<br><br><strong>Why not just show whatever is available?</strong> Early on this dashboard did exactly that, and it produced misleading numbers e.g. " +
         "\"100% zero carbon\" shown next to a nonzero fossil fuel figure, because the two came from different, partially updated settlement periods. " +
         "So there's now a guard: generation, demand and decarbonisation totals are only computed once <em>every</em> expected <code>FUELINST</code> reading for a " +
         "settlement period has arrived, and the summary banner/cards always show one single, internally consistent settlement period rather than mixing the " +
         "freshest available value for each field independently." +
         "<br><br><strong>What this banner means for you:</strong> the guard has fallen back to the most recent settlement period that was fully complete, rather " +
-        "than a newer but partial one. The figures shown are genuinely correct for that period, just not the very latest possible moment &mdash; and charts may " +
+        "than a newer but partial one. The figures shown are genuinely correct for that period, just not the very latest possible moment and charts may " +
         "show a gap at the leading edge until the delayed feed catches up. Everything self-corrects automatically on the next update once the upstream feed " +
         "resumes publishing; no action is needed here.",
     },

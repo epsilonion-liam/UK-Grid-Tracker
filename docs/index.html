@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GB National Grid Live: Real-Time Electricity &amp; Carbon Data | UK Politics Decoded</title>
-<meta name="description" content="Live tracker for Great Britain's electricity grid — generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions. A free resource from UK Politics Decoded.">
+<meta name="description" content="Live tracker for Great Britain's electricity grid - generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions. A free resource from UK Politics Decoded.">
 <meta name="author" content="UK Politics Decoded">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="http://nationalgrid.ukpoliticsdecoded.uk/">
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UK Politics Decoded">
 <meta property="og:title" content="GB National Grid Live: Real-Time Electricity &amp; Carbon Data">
-<meta property="og:description" content="Live tracker for Great Britain's electricity grid — generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions.">
+<meta property="og:description" content="Live tracker for Great Britain's electricity grid - generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions.">
 <meta property="og:url" content="http://nationalgrid.ukpoliticsdecoded.uk/">
 <meta property="og:locale" content="en_GB">
 <meta property="og:image" content="https://ukpoliticsdecoded.uk/assets/images/logo.webp">
@@ -23,7 +23,7 @@
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GB National Grid Live: Real-Time Electricity &amp; Carbon Data">
-<meta name="twitter:description" content="Live tracker for Great Britain's electricity grid — generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions.">
+<meta name="twitter:description" content="Live tracker for Great Britain's electricity grid - generation mix, carbon intensity, wholesale price, system frequency and interconnector flows, plus all 14 UK DNO regions.">
 <meta name="twitter:image" content="https://ukpoliticsdecoded.uk/assets/images/logo.webp">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css">
@@ -123,6 +123,40 @@
   .header-link-btn img { border-radius: 2px; }
 
   .header-link-btn svg { fill: currentColor; }
+
+  /* Data outage / staleness notice */
+  .outage-banner {
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    background: rgba(217, 119, 6, 0.12);
+    border: 1px solid rgba(217, 119, 6, 0.45);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    color: #f0b429;
+    line-height: 1.4;
+  }
+
+  .outage-banner.visible {
+    display: flex;
+  }
+
+  .outage-banner .icon {
+    flex: 0 0 auto;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .outage-banner strong {
+    color: #ffcf5c;
+  }
+
+  .outage-banner .detail {
+    color: var(--text-dim);
+    font-weight: 400;
+  }
 
   /* Metrics bar */
   .metrics-bar {
@@ -818,6 +852,14 @@
         Data Source (GitHub)
       </a>
     </div>
+    <div class="outage-banner" id="outageBanner">
+      <span class="icon">&#9888;</span>
+      <span>
+        <strong>Data source delayed.</strong>
+        <span id="outageBannerText">Some figures below are from the last available reading rather than live data.</span>
+        <span class="detail" id="outageBannerDetail"></span>
+      </span>
+    </div>
     <div class="metrics-bar" id="summaryBanner">
       <div class="metric-chip" id="metric-time">
         <span class="label">Time</span>
@@ -922,7 +964,7 @@
 
     <section class="regional">
       <h2>
-        Regional Carbon Intensity — 14 DNO Regions (live) <button class="info-icon" data-info-key="regionGrid" aria-label="About this section">i</button>
+        Regional Carbon Intensity - 14 DNO Regions (live) <button class="info-icon" data-info-key="regionGrid" aria-label="About this section">i</button>
         <span class="legend-swatches">
           <span><i style="background:var(--very-low)"></i>very low</span>
           <span><i style="background:var(--low)"></i>low</span>
@@ -956,7 +998,7 @@
 
     <section class="regional">
       <h2>
-        Dominant Fuel per DNO Region — Last 24h <button class="info-icon" data-info-key="regionHistory" aria-label="About this section">i</button>
+        Dominant Fuel per DNO Region - Last 24h <button class="info-icon" data-info-key="regionHistory" aria-label="About this section">i</button>
         <span class="legend-swatches">
           <span><i style="background:var(--very-low)"></i>very low</span>
           <span><i style="background:var(--low)"></i>low</span>
@@ -1113,7 +1155,7 @@
   }
 
   /** Format a raw numeric value for legend/tooltip display without any
-   *  rounding — mirrors exactly what is stored in the source JSON. */
+   *  rounding - mirrors exactly what is stored in the source JSON. */
   function exactValueFormatter(u, v) {
     if (v === null || v === undefined || Number.isNaN(v)) return "--";
     return String(v);
@@ -1342,6 +1384,42 @@
     updateStructuredDataFreshness(latestTimestamp);
   }
 
+  // How far behind "now" the freshest published row is allowed to be before
+  // we treat it as a routine publishing lag (Elexon/NESO/Carbon Intensity all
+  // publish on a ~5-30 min cadence with some normal jitter) rather than an
+  // actual outage worth surfacing to visitors.
+  const OUTAGE_THRESHOLD_MINUTES = 75;
+
+  /** Compare the snapshot row buildSnapshot() actually chose - i.e. the most
+   *  recent row where the completeness-gated aggregates are present - against
+   *  "now". Checking the raw newest row's age isn't enough: other sources
+   *  (Carbon Intensity API, embedded solar/wind, wholesale price) can keep
+   *  publishing fresh rows on schedule even while Elexon's FUELINST feed
+   *  itself is stalled, so the newest row can look recent while the fields
+   *  buildSnapshot() actually falls back on are hours stale. That silent
+   *  fallback is good for consistency but would otherwise look, to a
+   *  visitor, like the site quietly stopped updating. This surfaces it. */
+  function updateOutageBanner(cols, snapshotTimestamp) {
+    const banner = document.getElementById("outageBanner");
+    if (!cols.__rowCount || !snapshotTimestamp) {
+      banner.classList.remove("visible");
+      return;
+    }
+    const ageMinutes = (Date.now() - Date.parse(snapshotTimestamp)) / 60000;
+    if (ageMinutes < OUTAGE_THRESHOLD_MINUTES) {
+      banner.classList.remove("visible");
+      return;
+    }
+    const hours = ageMinutes / 60;
+    const ageText = hours >= 1.5 ? `${hours.toFixed(1)} hours` : `${Math.round(ageMinutes)} minutes`;
+    const asOf = LONDON_TIME_SHORT_FMT.format(new Date(snapshotTimestamp));
+    document.getElementById("outageBannerText").textContent =
+      `The upstream grid data feed hasn't fully updated in over ${ageText}.`;
+    document.getElementById("outageBannerDetail").textContent =
+      ` Figures and charts below are showing the last complete reading (as of ${asOf} BST/GMT) and may have gaps until it resumes.`;
+    banner.classList.add("visible");
+  }
+
   // Keeps the WebApplication JSON-LD's dateModified in step with the latest
   // loaded data point, as a freshness signal for search engines.
   function updateStructuredDataFreshness(latestTimestamp) {
@@ -1558,6 +1636,7 @@
 
       const { snapshot, timestamp: snapshotTimestamp } = buildSnapshot(cols);
       updateBanner(snapshot, snapshotTimestamp);
+      if (tabKey === "day") updateOutageBanner(cols, snapshotTimestamp);
       renderDetailTable(snapshot);
       updateDecarbCard(snapshot);
       updateOperationsCard(snapshot);
@@ -1760,7 +1839,7 @@
     upperChart: {
       title: "National Generation Mix & Carbon Intensity",
       body: "Shows the generation mix at a point in time (wind, solar, gas, nuclear, biomass, imports, in MW) alongside national carbon intensity (gCO2/kWh). " +
-        "Solar isn't metered by Elexon at all, and Elexon's wind figure only covers transmission connected wind farms, so both are combined with NESO's embedded (distribution-connected) generation estimates — see the Fuel &amp; Transfer Breakdown info for details.",
+        "Solar isn't metered by Elexon at all, and Elexon's wind figure only covers transmission connected wind farms, so both are combined with NESO's embedded (distribution connected) generation estimates, see the Fuel &amp; Transfer Breakdown info for details.",
     },
     lowerChart: {
       title: "System Balancing Volume & Frequency",
@@ -1769,8 +1848,8 @@
     },
     decarbCard: {
       title: "Grid Decarbonisation",
-      body: "Shows the current share of electricity generation coming from zero-carbon sources (wind, solar, nuclear, hydro) versus fossil fuels, " +
-        "plus a 48-hour forecast of national carbon intensity.",
+      body: "Shows the current share of electricity generation coming from zero carbon sources (wind, solar, nuclear, hydro) versus fossil fuels, " +
+        "plus a 48 hour forecast of national carbon intensity.",
     },
     opsCard: {
       title: "Grid Operations",
@@ -1783,27 +1862,27 @@
         "<br><br><strong>How accurate is this?</strong> Gas, coal, nuclear, biomass, hydro and interconnector flows come directly from Elexon's <code>FUELINST</code> meter readings (transmission connected generation only). " +
         "Solar isn't metered by Elexon at all, and its wind figure only covers transmission-connected wind farms both are supplemented with NESO's Demand Data Update dataset, which estimates embedded (distribution connected, e.g. rooftop solar) generation. " +
         "Battery storage shows <code>--</code> because Elexon doesn't yet publish battery charge/discharge data publicly, this affects every GB grid dashboard, not just this one. " +
-        "Percentages are relative to total demand (generation + net imports + storage discharge − storage charging), so they should sum to ~100%." +
-        "<br><br><strong>Why do figures differ from other dashboards (e.g. grid.iamkate.com)?</strong> They pull from the same public Elexon/NESO feeds, so figures should be broadly similar, but rarely identical: each site combines the feeds slightly differently (e.g. exactly how embedded generation is blended in), computes its \"demand\" denominator independently, and refreshes on its own schedule so a side-by-side comparison is really comparing two independent snapshots/estimates of the same underlying grid, not the same number twice.",
+        "Percentages are relative to total demand (generation + net imports + storage discharge - storage charging), so they should sum to ~100%." +
+        "<br><br><strong>Why do figures differ from other dashboards (e.g. grid.iamkate.com)?</strong> They pull from the same public Elexon/NESO feeds, so figures should be broadly similar, but rarely identical: each site combines the feeds slightly differently (e.g. exactly how embedded generation is blended in), computes its \"demand\" denominator independently, and refreshes on its own schedule so a side by side comparison is really comparing two independent snapshots/estimates of the same underlying grid, not the same number twice.",
     },
     regionGrid: {
-      title: "Regional Carbon Intensity — 14 DNO Regions",
+      title: "Regional Carbon Intensity - 14 DNO Regions",
       body: "Shows the current carbon intensity and dominant fuel source for each of the 14 GB Distribution Network Operator (DNO) regions. " +
         "\"Imports\" as a dominant fuel means that region is drawing most of its electricity from a neighbouring DNO region rather than generating it locally " +
         "(e.g. the North East often imports from Scotland, which frequently sits near 0 gCO2/kWh thanks to wind and hydro).",
     },
     priceChart: {
       title: "Wholesale Electricity Price",
-      body: "The GB day-ahead/within-day wholesale price (£/MWh), volume-weighted across reporting exchanges from Elexon's Market Index Data (MID). " +
-        "This is a single system-wide marginal price for each half-hour settlement period — every generator accepted in that period is paid the same price " +
+      body: "The GB day ahead/within day wholesale price (£/MWh), volume weighted across reporting exchanges from Elexon's Market Index Data (MID). " +
+        "This is a single system wide marginal price for each half hour settlement period, every generator accepted in that period is paid the same price " +
         "regardless of technology (wind, gas, nuclear, etc. all clear at the same rate). The API's do not publish a separate price per fuel type for the wholesale market, " +
         "because that is not how marginal pricing works: it is one clearing price for everyone, set by the most expensive generator needed to meet demand in that period.",
     },
     regionHistory: {
-      title: "Dominant Fuel per DNO Region — Last 24h",
-      body: "Each row is one of the 14 GB DNO regions; each cell is one half-hour settlement period over the last 24 hours, coloured by that region's carbon " +
+      title: "Dominant Fuel per DNO Region - Last 24h",
+      body: "Each row is one of the 14 GB DNO regions, each cell is one half hour settlement period over the last 24 hours, coloured by that region's carbon " +
         "intensity index. Hover a cell to see the exact time, dominant fuel source, and gCO2/kWh reading for that period. This lets you see how quickly the " +
-        "generation mix — and therefore emissions — can change locally within a single day, which the live snapshot above cannot show.",
+        "generation mix and therefore emissions can change locally within a single day, which the live snapshot above cannot show.",
     },
   };
 

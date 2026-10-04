@@ -8,7 +8,7 @@
 <meta name="author" content="UK Politics Decoded">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="http://nationalgrid.ukpoliticsdecoded.uk/">
-<link rel="icon" href="https://ukpoliticsdecoded.uk/assets/images/logo.webp" type="image/webp">
+<link rel="icon" href="https://ukpoliticsdecoded.uk/favicon.ico" type="image/webp">
 
 <!-- Open Graph / social previews -->
 <meta property="og:type" content="website">
@@ -534,6 +534,67 @@
     white-space: nowrap;
   }
 
+  /* Changelog page */
+  section.changelog {
+    padding: 16px 16px 24px;
+    max-width: 760px;
+  }
+
+  section.changelog h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 0 0 6px;
+  }
+
+  .changelog-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: 0 0 16px;
+  }
+
+  .changelog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .changelog-entry {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .changelog-entry .changelog-date {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+  }
+
+  .changelog-entry h3 {
+    font-size: 13px;
+    color: var(--text);
+    margin: 0 0 6px;
+  }
+
+  .changelog-entry ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .changelog-entry li {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: 2px 0;
+  }
+
   /* Grid Decarbonisation + Grid Operations summary cards */
   section.summary {
     padding: 4px 16px 0;
@@ -814,7 +875,7 @@
   "name": "GB National Grid Live",
   "alternateName": "GB Grid Telemetry",
   "url": "http://nationalgrid.ukpoliticsdecoded.uk/",
-  "description": "Live dashboard tracking Great Britain's national electricity grid: generation mix, carbon intensity, wholesale price, system frequency, interconnector flows, and regional carbon intensity across all 14 GB DNO regions.",
+  "description": "Live dashboard tracking, Great Britain's National Electricity Grid, generation mix, carbon intensity, wholesale price, system frequency, interconnector flows, and regional carbon intensity across all 14 GB DNO regions with primary fuel breakdown.",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Any",
   "browserRequirements": "Requires JavaScript",
@@ -841,10 +902,11 @@
 <div id="app">
 
   <header class="top-bar">
-    <h1>GB Grid <span>Telemetry</span></h1>
+    <h1>GB National Grid Live <span>Telemetry</span></h1>
+    <p>Live dashboard tracking Great Britain's national electricity grid, generation mix, carbon intensity, wholesale price, system frequency, and regional carbon intensity and primary fuelacross all 14 GB DNO regions.</p>
     <div class="header-links">
       <a class="header-link-btn" href="https://ukpoliticsdecoded.uk/" target="_blank" rel="noopener noreferrer">
-        <img src="https://ukpoliticsdecoded.uk/assets/images/logo.webp" alt="">
+        <img src="https://ukpoliticsdecoded.uk/favicon.ico" alt="favicon logo of UK Politics Decoded">
         UK Politics Decoded
       </a>
       <a class="header-link-btn" href="https://github.com/UKPoliticsDecoded/UK-Grid-Tracker" target="_blank" rel="noopener noreferrer">
@@ -896,6 +958,7 @@
   <nav class="page-nav" id="pageNav">
     <button data-page="overview" class="active">Overview</button>
     <button data-page="fuelmix">Carbon &amp; Fuel Mix System</button>
+    <button data-page="changelog">Changelog</button>
   </nav>
 
   <nav class="history-nav" id="historyNav">
@@ -1012,6 +1075,49 @@
       <div class="region-history-axis">
         <span></span>
         <span class="labels" id="regionHistoryAxis"></span>
+      </div>
+    </section>
+  </div>
+
+  <div class="app-page" id="page-changelog">
+    <section class="changelog">
+      <h2>Changelog</h2>
+      <p class="changelog-note">
+        A running log of notable updates to this dashboard.
+        If you have any suggestions for improvements, please feel free to contact me via email at <a href="mailto:support@ukpoliticsdecoded.uk">support@ukpoliticsdecoded.uk</a>.
+      </p>
+
+      <div class="changelog-list" id="changelogList">
+        <!--
+          Add new entries at the TOP of this list.
+          Copy/paste the block below and edit the date, title, and bullet points.
+
+          <div class="changelog-entry">
+            <div class="changelog-date">2026-09-28</div>
+            <h3>Short title of the update</h3>
+            <ul>
+              <li>What changed and why it matters to readers.</li>
+            </ul>
+          </div>
+        -->
+
+        <div class="changelog-entry">
+          <div class="changelog-date">2026-09-28</div>
+          <h3>Changelog tab added</h3>
+          <p>Elexon API has seen distruption to the data been served through its API, causing the dashboard to show stale data. This has been fixed by adding a guarding feature to ensure the data is up to date and accurate.</p>
+          <p>Instead of showing inaccurate data we now pause updates to the dashboard until the data is available again through the API's batch.</p>
+          <ul>
+            <li>Updated the homepage to include a description of the dashboard and its purpose.</li>
+            <li>Updated the header to include the name of the dashboard and its purpose.</li>
+            <li>Added guarding feature to ensure the data is up to date and accurate.</li>
+            <li>Added this Changelog tab so readers can follow notable updates as the dashboard develops.</li>
+            <li>(overview page) Added a new system frequency chart to show the frequency of the electricity system.</li>
+            <li>(fuelmix page) Added a new fuel mix chart to show the national generation mix and carbon intensity.</li>
+            <li>(fuelmix page) Added a new wholesale electricity price chart to show the price of electricity in the UK.</li>
+            <li>(fuelmix page) Added tooltip to show the details of the data when hovering over the charts.</li>
+
+          </ul>
+        </div>
       </div>
     </section>
   </div>

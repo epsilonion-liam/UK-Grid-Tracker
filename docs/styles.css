@@ -681,6 +681,120 @@
     margin: 2px 0;
   }
 
+  /* System warnings & notices */
+  section.warnings {
+    padding: 4px 16px 20px;
+  }
+
+  section.warnings h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 10px 0 4px;
+  }
+
+  .warnings-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+
+  .warnings-note a { color: var(--accent); text-decoration: none; }
+  .warnings-note a:hover { text-decoration: underline; }
+
+  .warnings-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .warning-stat {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .warning-stat .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+
+  .warning-stat .val {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .warnings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .warning-entry {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .warning-entry summary {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    list-style: none;
+  }
+
+  .warning-entry summary::-webkit-details-marker { display: none; }
+  .warning-entry summary::marker { content: ""; }
+
+  .warning-badge {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--border);
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .warning-badge.type-it-systems-outage { background: rgba(227, 101, 75, 0.18); color: #e3654b; }
+  .warning-badge.type-electricity-margin-notice { background: rgba(242, 201, 76, 0.18); color: #f2c94c; }
+  .warning-badge.type-capacity-market-notice { background: rgba(176, 133, 245, 0.18); color: #b085f5; }
+
+  .warning-time {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .warning-age {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  .warning-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin: 10px 0 0;
+    white-space: pre-line;
+  }
+
   /* Documentation page */
   .documentation-page {
     width: min(100%, 900px);

@@ -444,6 +444,56 @@ function dashboardUrl(string $page, string $period, string $regionalPeriod = 'da
     return '?' . http_build_query(['page' => $page, 'period' => $period, 'regional_period' => $regionalPeriod]);
 }
 
+function cleanWarningText(string $text): string
+{
+    // Elexon's SYSWARN free text sometimes carries line breaks as the literal
+    // two/three-character sequences \r\n rather than real control characters,
+    // as well as real \r\n. Normalise both to a single \n before display.
+    $normalised = str_replace(['\\r\\n', '\\n', '\\r'], "\n", $text);
+    $normalised = str_replace(["\r\n", "\r"], "\n", $normalised);
+    // Elexon's SYSWARN text puts a blank line after every single line (i.e.
+    // every line break is doubled), which would otherwise render as a large
+    // gap between each sentence. Collapse any run of blank lines down to one
+    // line break so paragraphs read normally.
+    $normalised = preg_replace('/\n[ \t]*\n+/', "\n", $normalised);
+    $normalised = preg_replace('/[ \t]{2,}/', ' ', $normalised);
+    return trim((string)$normalised);
+}
+
+function warningTypeClass(string $type): string
+{
+    $slug = strtolower((string)preg_replace('/[^a-z0-9]+/i', '-', trim($type)));
+    return trim($slug, '-') ?: 'other';
+}
+
+function formatRelativeAge(mixed $timestamp): string
+{
+    if (!$timestamp) {
+        return '--';
+    }
+    try {
+        $then = new DateTime((string)$timestamp, new DateTimeZone('UTC'));
+    } catch (Exception $error) {
+        return '--';
+    }
+    $seconds = time() - $then->getTimestamp();
+    if ($seconds < 0) {
+        return '--';
+    }
+    if ($seconds < 60) {
+        return 'just now';
+    }
+    $minutes = intdiv($seconds, 60);
+    if ($minutes < 60) {
+        return $minutes . 'm ago';
+    }
+    $hours = intdiv($minutes, 60);
+    if ($hours < 48) {
+        return $hours . 'h ago';
+    }
+    return intdiv($hours, 24) . 'd ago';
+}
+
 $timeline = loadGridDataset($period . '.json', $period === 'day' ? 60 : 1800);
 $rows = $timeline['rows'];
 $snapshot = latestSnapshot($rows);
@@ -460,8 +510,9 @@ if ($page === 'fuelmix') {
     }
 }
 $forecast = ($page === 'overview') ? loadGridDataset('carbon_forecast.json', 300) : ['rows' => [], 'stale' => false, 'available' => true];
-$dataIsStale = $timeline['stale'] || $regions['stale'] || $regionalHistory['stale'] || $forecast['stale'];
-$hasUnavailableData = !$timeline['available'] || !$regions['available'] || !$regionalHistory['available'] || !$forecast['available'];
+$systemWarnings = ($page === 'overview') ? loadGridDataset('system_warnings.json', 300) : ['rows' => [], 'stale' => false, 'available' => true];
+$dataIsStale = $timeline['stale'] || $regions['stale'] || $regionalHistory['stale'] || $forecast['stale'] || $systemWarnings['stale'];
+$hasUnavailableData = !$timeline['available'] || !$regions['available'] || !$regionalHistory['available'] || !$forecast['available'] || !$systemWarnings['available'];
 $latestTimestamp = $snapshot['timestamp'] ?? null;
 $isOutdated = false;
 if ($period === 'day' && $latestTimestamp) {
@@ -471,6 +522,16 @@ if ($period === 'day' && $latestTimestamp) {
         $isOutdated = false;
     }
 }
+
+$warningRows = $systemWarnings['rows']; // exported newest-first by fetch_grid.py
+$warningTypeCounts = [];
+foreach ($warningRows as $warningRow) {
+    $warningTypeKey = trim((string)($warningRow['warning_type'] ?? '')) ?: 'Other';
+    $warningTypeCounts[$warningTypeKey] = ($warningTypeCounts[$warningTypeKey] ?? 0) + 1;
+}
+arsort($warningTypeCounts);
+$topWarningType = $warningTypeCounts ? array_key_first($warningTypeCounts) : null;
+$latestWarningTimestamp = $warningRows[0]['publish_time'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en-GB">
@@ -486,6 +547,7 @@ ini_set('error_reporting', E_ALL);
     <meta name="description" content="Explore Great Britain's live electricity generation mix, demand, carbon intensity, wholesale prices, system frequency and regional data with this free dashboard from UK Politics Decoded.">
     <meta name="author" content="UK Politics Decoded">
     <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0A0A0A">
     <link rel="canonical" href="https://nationalgrid.ukpoliticsdecoded.uk/">
     <link rel="icon" href="https://ukpoliticsdecoded.uk/favicon.ico" type="image/webp">
 
@@ -502,6 +564,7 @@ ini_set('error_reporting', E_ALL);
 
     <!-- X/Twitter social previews -->
     <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@uk_decoded">
     <meta name="twitter:title" content="GB Electricity Grid Tracker: Live Generation &amp; Carbon Data">
     <meta name="twitter:description" content="Explore Great Britain's live electricity generation mix, demand, carbon intensity, wholesale prices, system frequency and regional data with this free dashboard from UK Politics Decoded.">
     <meta name="twitter:image" content="https://ukpoliticsdecoded.uk/assets/images/logo.webp">
@@ -541,6 +604,16 @@ ini_set('error_reporting', E_ALL);
             "publisher": {
               "@id": "https://ukpoliticsdecoded.uk/#publisher"
             }
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://ukpoliticsdecoded.uk/#publisher",
+          "name": "UK Politics Decoded",
+          "url": "https://ukpoliticsdecoded.uk/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://ukpoliticsdecoded.uk/assets/images/logo.webp"
           }
         },
         {
@@ -585,7 +658,7 @@ ini_set('error_reporting', E_ALL);
     <header class="top-bar">
         <h1>GB National Grid Live <span>Telemetry</span></h1>
         <div class="header-links">
-            <a href="https://ukpoliticsdecoded.uk/" target="_blank" rel="noopener noreferrer" class="header-link-btn">
+            <a href="https://ukpoliticsdecoded.uk/index.html" target="_blank" rel="noopener noreferrer" class="header-link-btn">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20v-6h4v6h5V6h-7l-8 8v6h5z"/></svg>
                 UK Politics Decoded
             </a>
@@ -718,7 +791,7 @@ ini_set('error_reporting', E_ALL);
             <section class="documentation-section">
                 <h3>How electrification may change the mix</h3>
                 <p>As vehicles, building heating and some industrial processes switch to electricity, electricity demand is expected to grow. The amount and timing of that growth depend on technology, policy, efficiency and how flexibly new demand can be scheduled.</p>
-                <p>More wind and solar can reduce fossil-fuel generation when their output is available, but their output varies with weather and time of day. A reliable, lower-carbon system therefore also needs a diverse mix of resources: firm low-carbon generation, storage, interconnectors, flexible demand and enough transmission and distribution capacity. Gas generation may continue to help balance the system during periods when low-carbon output is insufficient; its future role depends on the pace of investment and the wider energy transition.</p>
+                <p>More wind and solar can reduce fossil fuel generation when their output is available, but their output varies with weather and time of day. A reliable, lower-carbon system therefore also needs a diverse mix of resources: firm low-carbon generation, storage, interconnectors, flexible demand and enough transmission and distribution capacity. Gas generation may continue to help balance the system during periods when low-carbon output is insufficient; its future role depends on the pace of investment and the wider energy transition.</p>
                 <p>More diverse supply can reduce exposure to any one fuel or import route, but it does not remove all price volatility or guarantee lower bills. Weather, outages, fuel markets, network constraints and the cost of new infrastructure can all affect system costs.</p>
             </section>
 
@@ -804,6 +877,42 @@ ini_set('error_reporting', E_ALL);
                 </ul>
                 <p>For questions or suggestions, contact <a href="mailto:support@ukpoliticsdecoded.uk">support@ukpoliticsdecoded.uk</a>. This dashboard is an independent informational project and is not an official government or system operator service.</p>
             </section>
+            <section class="documentation-section" id="NESO-Notifications">
+                <h3>NESO System Operator Notifications</h3>
+                <h4>The "System Balancing Volume & Frequency" Section</h4>
+                <ul>
+                     <li>Balancing Volume (MW): The difference between generation and demand at any time, showing how much extra or spare capacity is available to meet demand.</li>
+                     <li>System Frequency (Hz): The speed of the grid's electrical rotation, which must stay at exactly 50Hz to keep everything in sync.</li>
+                </ul>
+                <h4>The "What is Normal?" Matrix</h4>
+                <ul>
+                    <li>Normal (Business as Usual): Automatic market adjustments. Interconnectors flow based on commercial prices. Frequency stays between 49.5Hz and 50.5Hz</li>
+                    <li>Routine Operational Balancing: NESO uses the Balancing Mechanism to pay domestic wind farms to turn down, or gas plants to turn up, to fine tune the system. This happens thousands of times a day.
+                    </li>
+                </ul>
+                <h4>SO to SO High Emergency Pricing (e.g., €1,168/MWh)</h4>
+                <ul>
+                    <li>Administrative Cap/Guardrail: It is a pre agreed maximum financial price cap set in balancing rules for emergency grid support transactions between national system operators (like the UK's NESO and continental operators like France's RTE).</li>
+                    <li>Commercial Incentive: It guarantees a high price floor or ceiling to make sure neighboring European power operators keep high voltage subsea/overhead interconnector lines reserved, staffed, and ready to send or absorb power during tight system margins</li>
+                    <li>Not a Spot Market Price: This figure (€1,168/MWh) does not mean the entire day ahead retail or wholesale electricity market has settled at that rate. It is strictly an operational balancing backstop used outside standard commercial auctions (like N2EX).</li>
+                    <li>System Security Tool: It reflects a tight operational margin (often signaled via Electricity Margin Notices) rather than an actual physical collapse or bankruptcy of the grid</li>
+                </ul>
+                <h4>Emergency Assistance (EA) Requests:</h4>
+                <ul>
+                    <li>Emergency Assistance (EA) Requests What it actually is: A routine, pre-planned safety valve. It allows NESO to instantly grab a few hundred Megawatts from France, Belgium, or Norway for a few minutes rather than wastefully spinning up a massive fossil fuel plant for a short peak</li>
+                </ul>
+                </ul>
+                <h4>Electricity Margin Notices (EMN):</h4>
+                <ul>
+                    <li>What it actually is: A public "help wanted" sign for the energy sector. NESO is simply telling backup generators to be online and available just in case. The UK historically triggers these multiple times a winter without the public ever notice a flicker.</li>
+                </ul>
+                <h4>IT Systems Outage Notices:</h4>
+                <ul>
+                    <li>What it actually is: A planned or unplanned maintenance notice for the IT systems that connected generators and suppliers use to talk to the Balancing Mechanism (e.g. the Wider Access API), not an outage of the electricity grid itself.</li>
+                    <li>Who it affects: Market participants with automated connections to the Balancing Mechanism. Sites with dedicated control room phone lines are typically unaffected and can continue taking instructions as normal during the outage window.</li>
+                    <li>Why it's published here: These notices appear in Elexon's public system warnings feed alongside EMNs and CMNs, so this dashboard surfaces them for completeness, but they are an administrative/operational notice, not a sign of grid instability.</li>
+                </ul>
+            </section>
         </section>
         <?php elseif ($page === 'changelog'): ?>
         <section id="page-changelog" class="app-page changelog-page active">
@@ -811,6 +920,15 @@ ini_set('error_reporting', E_ALL);
                 <h2>Changelog</h2>
                 <p class="changelog-note">A running log of notable updates to this dashboard. Suggestions are welcome at <a href="mailto:support@ukpoliticsdecoded.uk">support@ukpoliticsdecoded.uk</a>.</p>
                 <div class="changelog-list">
+                <article class="changelog-entry">
+                        <div class="changelog-date">2026-10-15</div>
+                        <h3>System Warnings &amp; Notices Section added</h3>
+                        <ul>
+                            <li>Added the system warnings and notices section to the overview tab.</li>
+                            <li>Added the system warnings and notices section documentation.</li>
+                            <li>Added NetZero documentation.</li>
+                    </article>
+
                     <article class="changelog-entry">
                         <div class="changelog-date">2026-09-28</div>
                         <h3>Changelog tab added</h3>
@@ -943,6 +1061,43 @@ ini_set('error_reporting', E_ALL);
             <?php if (!$regions['rows']): ?><p class="chart-empty">Regional readings are currently unavailable.</p><?php endif; ?>
         </div>
     </section>
+
+    <!-- System Warnings Section -->
+    <section class="warnings">
+        <h2>System Warnings &amp; Notices - Rolling 30 Days</h2>
+        <p class="warnings-note">Official NESO/Elexon system warning notices (e.g. Electricity Margin Notices, Capacity Market Notices, operational alerts). Not every notice indicates a consumer facing issue. see <a href="<?php echo h(dashboardUrl('documentation', $period, $regionalPeriod)); ?>#NESO-Notifications">what these notice types mean</a>.</p>
+        <div class="warnings-stats">
+            <div class="warning-stat">
+                <span class="label">Events (30d)</span>
+                <span class="val"><?php echo h((string)count($warningRows)); ?></span>
+            </div>
+            <div class="warning-stat">
+                <span class="label">Most Common Type</span>
+                <span class="val"><?php echo h($topWarningType ?? '--'); ?></span>
+            </div>
+            <div class="warning-stat">
+                <span class="label">Last Event</span>
+                <span class="val"><?php echo h(formatRelativeAge($latestWarningTimestamp)); ?></span>
+            </div>
+        </div>
+        <div class="warnings-list">
+            <?php foreach ($warningRows as $warningRow):
+                $warningType = trim((string)($warningRow['warning_type'] ?? '')) ?: 'Notice';
+                $warningText = cleanWarningText((string)($warningRow['warning_text'] ?? ''));
+                $warningTime = $warningRow['publish_time'] ?? null;
+            ?>
+            <details class="warning-entry">
+                <summary>
+                    <span class="warning-badge type-<?php echo h(warningTypeClass($warningType)); ?>"><?php echo h($warningType); ?></span>
+                    <span class="warning-time"><?php echo h(formatGridTime($warningTime)); ?></span>
+                    <span class="warning-age"><?php echo h(formatRelativeAge($warningTime)); ?></span>
+                </summary>
+                <p class="warning-text"><?php echo nl2br(h($warningText)); ?></p>
+            </details>
+            <?php endforeach; ?>
+            <?php if (!$warningRows): ?><p class="chart-empty">No system warnings recorded in the last 30 days.</p><?php endif; ?>
+        </div>
+    </section>
     <?php elseif ($page === 'fuelmix'): ?>
     <?php
     $historyByRegion = [];
@@ -1027,7 +1182,7 @@ ini_set('error_reporting', E_ALL);
         <span aria-hidden="true">&middot;</span>
         <a href="privacy.html">Privacy Policy</a>
         <span aria-hidden="true">&middot;</span>
-        <a href="https://ukpoliticsdecoded.uk/" target="_blank" rel="noopener">UK Politics Decoded</a>
+        <a href="https://ukpoliticsdecoded.uk/index.html" target="_blank" rel="noopener">UK Politics Decoded</a>
         <span aria-hidden="true">&middot;</span>
         <a href="https://github.com/UKPoliticsDecoded/UK-Grid-Tracker" target="_blank" rel="noopener">GitHub data repo</a>
     </nav>
